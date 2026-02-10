@@ -1,0 +1,19 @@
+# Binaries
+executables/
+bin/
+castra
+castra.exe
+*.exe
+*.dll
+*.so
+*.dylib
+
+# Local Data
+workspace.db
+*.log
+tmp/
+dist/
+
+# OS
+.DS_Store
+Thumbs.db

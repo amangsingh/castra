@@ -1,0 +1,39 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*' # Push events to matching v*, i.e. v1.0, v20.15.10
+
+jobs:
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.22'
+
+      - name: Build macOS
+        run: GOOS=darwin GOARCH=amd64 go build -o castra-mac main.go
+
+      - name: Build Linux
+        run: GOOS=linux GOARCH=amd64 go build -o castra-linux main.go
+
+      - name: Build Windows
+        run: GOOS=windows GOARCH=amd64 go build -o castra-windows.exe main.go
+
+      - name: Release
+        uses: softprops/action-gh-release@v2
+        if: startsWith(github.ref, 'refs/tags/')
+        with:
+          files: |
+            castra-mac
+            castra-linux
+            castra-windows.exe
+          draft: false
+          prerelease: false
