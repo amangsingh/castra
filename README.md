@@ -23,7 +23,22 @@ Castra is a specialized, pure CLI tool designed for strict, local project manage
 ### Pre-built Binaries
 You can download the latest pre-built binaries for macOS, Linux, and Windows from our [GitHub Releases](https://github.com/yourusername/castra/releases) page.
 
-Or check the `executables/` directory in this repository.
+**Installation Steps:**
+
+1.  **Download** the binary for your platform (e.g., `castra-mac`, `castra-linux`, or `castra-windows.exe`).
+2.  **Rename** the file to `castra` (or `castra.exe` on Windows).
+3.  **Move** it to a directory in your system's `PATH`.
+
+    *   **macOS / Linux:**
+        ```bash
+        mv castra-mac castra
+        chmod +x castra
+        sudo mv castra /usr/local/bin/
+        ```
+    *   **Windows:**
+        Rename `castra-windows.exe` to `castra.exe` and move it to a folder in your `%PATH%` (e.g., `C:\Program Files\Castra\`).
+
+4.  **Verify:** Run `castra` in your terminal. You should see the help message.
 
 ### Build from Source
 Requirements: [Go](https://go.dev/) 1.22+
