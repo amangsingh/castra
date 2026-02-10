@@ -30,15 +30,30 @@ You can download the latest pre-built binaries for macOS, Linux, and Windows fro
 3.  **Move** it to a directory in your system's `PATH`.
 
     *   **macOS / Linux:**
-        ```bash
-        mv castra-mac castra
-        chmod +x castra
-        sudo mv castra /usr/local/bin/
-        ```
-    *   **Windows:**
-        Rename `castra-windows.exe` to `castra.exe` and move it to a folder in your `%PATH%` (e.g., `C:\Program Files\Castra\`).
+**Installation Steps (macOS / Linux):**
 
-4.  **Verify:** Run `castra` in your terminal. You should see the help message.
+1.  **Download** the binary (e.g., `castra-mac`).
+2.  **Make Executable:** This is critical.
+    ```bash
+    chmod +x castra-mac
+    ```
+    *macOS Note:* If you downloaded via a browser, you might need to remove the quarantine flag:
+    ```bash
+    xattr -d com.apple.quarantine castra-mac
+    ```
+3.  **Rename & Move:**
+    ```bash
+    mv castra-mac castra
+    sudo mv castra /usr/local/bin/
+    ```
+4.  **Verify:**
+    ```bash
+    castra init --antigravity
+    ```
+
+**Installation Steps (Windows):**
+1.  Rename `castra-windows.exe` to `castra.exe`.
+2.  Move it to a folder in your `%PATH%` (e.g., `C:\Windows\System32` or create a `C:\Tools` folder and add it to Environment Variables).
 
 ### Build from Source
 Requirements: [Go](https://go.dev/) 1.22+
@@ -59,6 +74,10 @@ sudo mv castra /usr/local/bin/
 
 **Windows:**
 Move `castra.exe` to a folder in your `%PATH%` (e.g., `C:\Windows\System32` or a custom tools folder).
+
+### Troubleshooting
+*   **"Permission denied":** Run `chmod +x /usr/local/bin/castra`.
+*   **"Command not found":** Ensure `/usr/local/bin` is in your PATH (`echo $PATH`). If using `sudo`, your secure_path might be strict; try running with full path: `sudo /usr/local/bin/castra ...` or fix permissions so `sudo` isn't needed for read-only commands.
 
 ## Usage
 
