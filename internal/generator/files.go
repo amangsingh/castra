@@ -28,9 +28,6 @@ func InitWorkspace(baseDir string) error {
 	if err := writeTemplate("templates/rules.md", filepath.Join(baseDir, ".agent/rules/rules.md")); err != nil {
 		return err
 	}
-	if err := writeTemplate("templates/castra.md", filepath.Join(baseDir, ".agent/rules/castra.md")); err != nil {
-		return err
-	}
 
 	// 3. Write Skills
 	skills := []string{
