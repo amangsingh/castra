@@ -28,7 +28,7 @@ func AddTask(db *sql.DB, projectID int64, sprintID *int64, title, desc, priority
 }
 
 func ListTasks(db *sql.DB, projectID int64, sprintID *int64, backlogOnly bool, role string) ([]Task, error) {
-	query := `SELECT id, project_id, sprint_id, title, description, status, priority, qa_approved, security_approved FROM tasks WHERE project_id = ? AND deleted_at IS NULL`
+	query := `SELECT id, project_id, sprint_id, title, COALESCE(description, ''), status, priority, qa_approved, security_approved FROM tasks WHERE project_id = ? AND deleted_at IS NULL`
 	args := []interface{}{projectID}
 
 	if backlogOnly {
@@ -43,12 +43,12 @@ func ListTasks(db *sql.DB, projectID int64, sprintID *int64, backlogOnly bool, r
 	// 2. Engineer: todo, doing, blocked, pending
 	// 3. QA & Security: review
 	switch role {
-	case "engineer":
+	case "junior-engineer", "senior-engineer":
 		query += ` AND status IN ('todo', 'doing', 'blocked', 'pending')`
-	case "qa", "security":
+	case "qa-functional", "security-ops":
 		query += ` AND status = 'review'`
 	case "doc-writer":
-		query += ` AND status = 'done'`
+		// Doc writer sees all, no status filter needed
 	case "architect":
 		// No filter
 	default:
@@ -85,12 +85,12 @@ func UpdateTaskStatus(db *sql.DB, id int64, newStatus string, role string) error
 	switch role {
 	case "architect":
 		// Can do anything
-	case "engineer":
+	case "junior-engineer", "senior-engineer":
 		// Cannot set to 'done'
 		if newStatus == "done" {
 			return fmt.Errorf("engineer cannot mark task as done (must be approved by qa & security)")
 		}
-	case "qa", "security":
+	case "qa-functional", "security-ops":
 		// Can only pick up from 'review' and mark as 'done' (conditional)
 		if currentStatus != "review" {
 			return fmt.Errorf("%s can only process tasks in 'review' status", role)
@@ -98,10 +98,10 @@ func UpdateTaskStatus(db *sql.DB, id int64, newStatus string, role string) error
 
 		if newStatus == "done" {
 			// Register Approval
-			if role == "qa" {
+			if role == "qa-functional" {
 				qaApp = true
 			}
-			if role == "security" {
+			if role == "security-ops" {
 				secApp = true
 			}
 
