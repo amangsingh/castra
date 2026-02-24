@@ -96,7 +96,7 @@ func TestListTasks_RoleFiltering(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.role, func(t *testing.T) {
-			tasks, err := ListTasks(db, 1, nil, false, tt.role)
+			tasks, err := ListTasks(db, 1, nil, nil, false, tt.role)
 			if err != nil {
 				t.Fatalf("ListTasks failed: %v", err)
 			}

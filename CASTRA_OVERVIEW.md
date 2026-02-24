@@ -29,6 +29,7 @@ castra (standalone binary)
 │   │   ├── init.go                            # castra init --antigravity
 │   │   ├── project.go                         # castra project add|list|delete
 │   │   ├── sprint.go                          # castra sprint add|list
+│   │   ├── milestone.go                       # castra milestone add|list|update
 │   │   ├── task.go                            # castra task add|list|update|delete
 │   │   ├── note.go                            # castra note add|list
 │   │   ├── log.go                             # castra log add|list
@@ -36,6 +37,7 @@ castra (standalone binary)
 │   ├── cli/                                   # Business logic layer (RBAC, dual-approval)
 │   │   ├── projects.go                        # Project CRUD
 │   │   ├── sprints.go                         # Sprint CRUD
+│   │   ├── milestones.go                      # Milestone CRUD
 │   │   ├── tasks.go                           # Task CRUD, role validation, approval locks
 │   │   ├── notes.go                           # Notes with task-level scoping, role filtering
 │   │   ├── audit.go                           # Audit log read/write, auto-logging
@@ -68,11 +70,14 @@ Five tables, managed by a versioned migration system:
 -- Projects: The top-level container
 projects (id, name, description, status, notes, created_at, updated_at, deleted_at)
 
--- Sprints: Time-boxed iterations within a project
+-- Milestones: Major feature groupings or epic roadmaps within a project
+milestones (id, project_id, name, status, created_at, updated_at, deleted_at)
+
+-- Sprints: Time-boxed execution iterations within a project
 sprints (id, project_id, name, start_date, end_date, status, created_at, deleted_at)
 
--- Tasks: Work items with dual-approval locks
-tasks (id, project_id, sprint_id, title, description, status, priority, context_ref,
+-- Tasks: The granular units of work
+tasks (id, project_id, milestone_id, sprint_id, title, description, status, priority, context_ref,
        qa_approved, security_approved, created_at, updated_at, deleted_at)
 
 -- Project Notes: Role-tagged context, optionally scoped to a task
@@ -95,10 +100,10 @@ Schema evolution is handled by a versioned migration runner in `migrate.go`. The
 
 ## The Six Roles
 
-### 1. Architect — *The Lawgiver* (`--role architect`)
-| Aspect | Detail |
-|---|---|
-| **Power** | God mode. Can move any task to any status. |
+| Role | Persona Name | Description |
+| :--- | :--- | :--- |
+| **`architect`** | **The Lawgiver** | Systems architect and project manager. The only role that can create projects, milestones, sprints, and tasks. |
+| **`senior-engineer`** | **The Pragmatist** | Core implementer. Picks up tasks, writes code, moves tasks to `review` or `blocked`. |
 | **Duty** | Translate vision into projects, sprints, and tasks. |
 | **Prohibition** | Does not write code. Does not execute. Only commands. |
 | **Status Control** | Any → Any |
@@ -207,11 +212,20 @@ castra sprint list --role <role> --project <id>
 ```
 **Permissions:** Only `architect` can add. All roles can list.
 
-### `castra task`
+### `castra milestone`
+Manages major feature roadmaps.
 ```bash
-castra task add --role architect --project <id> --sprint <id> --title "..." --desc "..." --prio <low|medium|high>
-castra task list --role <role> --project <id> [--sprint <id>] [--backlog]
-castra task update --role <role> --status <todo|doing|review|blocked|pending|done> <id>
+castra milestone add --role architect --project <id> --name "..."
+castra milestone list --role <role> --project <id>
+castra milestone update --role architect --status <open|completed> <id>
+```
+
+### `castra task`
+Manages granular work items.
+```bash
+castra task add --role architect --project <id> --milestone <id> --sprint <id> --title "..." --desc "..." --prio <low|medium|high>
+castra task list --role <role> --project <id> [--milestone <id>] [--sprint <id>] [--backlog]
+castra task update --role <role> --status <status> <id>
 castra task delete --role architect <id>
 ```
 **Permissions:** Only `architect` can add/delete. Status transitions are role-enforced (see Task Lifecycle).

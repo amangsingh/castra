@@ -18,7 +18,7 @@ func TestFreshDatabase(t *testing.T) {
 	}
 
 	// Verify all tables exist
-	tables := []string{"projects", "sprints", "tasks", "project_notes", "audit_log", "schema_version"}
+	tables := []string{"projects", "milestones", "sprints", "tasks", "project_notes", "audit_log", "schema_version"}
 	for _, table := range tables {
 		var name string
 		err := db.QueryRow(`SELECT name FROM sqlite_master WHERE type='table' AND name=?`, table).Scan(&name)
@@ -204,7 +204,12 @@ func TestInitDB(t *testing.T) {
 		t.Errorf("Failed to insert project: %v", err)
 	}
 
-	_, err = database.Exec(`INSERT INTO tasks (project_id, title, status) VALUES (1, 'Task 1', 'todo')`)
+	_, err = database.Exec(`INSERT INTO milestones (project_id, name) VALUES (1, 'Milestone 1')`)
+	if err != nil {
+		t.Errorf("Failed to insert milestone: %v", err)
+	}
+
+	_, err = database.Exec(`INSERT INTO tasks (project_id, milestone_id, title, status) VALUES (1, 1, 'Task 1', 'todo')`)
 	if err != nil {
 		t.Errorf("Failed to insert task: %v", err)
 	}

@@ -8,6 +8,7 @@ import (
 type Task struct {
 	ID               int64
 	ProjectID        int64
+	MilestoneID      *int64 // Pointer to handle NULL
 	SprintID         *int64 // Pointer to handle NULL
 	Title            string
 	Description      string
@@ -17,25 +18,31 @@ type Task struct {
 	SecurityApproved bool
 }
 
-func AddTask(db *sql.DB, projectID int64, sprintID *int64, title, desc, priority string) (int64, error) {
+func AddTask(db *sql.DB, projectID int64, milestoneID, sprintID *int64, title, desc, priority string) (int64, error) {
 	// Defaults to Todo
-	query := `INSERT INTO tasks (project_id, sprint_id, title, description, priority, status) VALUES (?, ?, ?, ?, ?, 'todo')`
-	res, err := db.Exec(query, projectID, sprintID, title, desc, priority)
+	query := `INSERT INTO tasks (project_id, milestone_id, sprint_id, title, description, priority, status) VALUES (?, ?, ?, ?, ?, ?, 'todo')`
+	res, err := db.Exec(query, projectID, milestoneID, sprintID, title, desc, priority)
 	if err != nil {
 		return 0, err
 	}
 	return res.LastInsertId()
 }
 
-func ListTasks(db *sql.DB, projectID int64, sprintID *int64, backlogOnly bool, role string) ([]Task, error) {
-	query := `SELECT id, project_id, sprint_id, title, COALESCE(description, ''), status, priority, qa_approved, security_approved FROM tasks WHERE project_id = ? AND deleted_at IS NULL`
+func ListTasks(db *sql.DB, projectID int64, milestoneID, sprintID *int64, backlogOnly bool, role string) ([]Task, error) {
+	query := `SELECT id, project_id, milestone_id, sprint_id, title, COALESCE(description, ''), status, priority, qa_approved, security_approved FROM tasks WHERE project_id = ? AND deleted_at IS NULL`
 	args := []interface{}{projectID}
 
 	if backlogOnly {
-		query += ` AND sprint_id IS NULL`
-	} else if sprintID != nil {
-		query += ` AND sprint_id = ?`
-		args = append(args, *sprintID)
+		query += ` AND sprint_id IS NULL AND milestone_id IS NULL`
+	} else {
+		if milestoneID != nil {
+			query += ` AND milestone_id = ?`
+			args = append(args, *milestoneID)
+		}
+		if sprintID != nil {
+			query += ` AND sprint_id = ?`
+			args = append(args, *sprintID)
+		}
 	}
 
 	// Filter by Role Context
@@ -64,7 +71,7 @@ func ListTasks(db *sql.DB, projectID int64, sprintID *int64, backlogOnly bool, r
 	var tasks []Task
 	for rows.Next() {
 		var t Task
-		if err := rows.Scan(&t.ID, &t.ProjectID, &t.SprintID, &t.Title, &t.Description, &t.Status, &t.Priority, &t.QAApproved, &t.SecurityApproved); err != nil {
+		if err := rows.Scan(&t.ID, &t.ProjectID, &t.MilestoneID, &t.SprintID, &t.Title, &t.Description, &t.Status, &t.Priority, &t.QAApproved, &t.SecurityApproved); err != nil {
 			return nil, err
 		}
 		tasks = append(tasks, t)

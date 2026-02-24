@@ -27,6 +27,7 @@ func HandleTask(role string) {
 		}
 		fs := flag.NewFlagSet("task add", flag.ExitOnError)
 		pid := fs.Int64("project", 0, "Project ID")
+		mid := fs.Int64("milestone", 0, "Milestone ID (optional)")
 		sid := fs.Int64("sprint", 0, "Sprint ID (optional)")
 		title := fs.String("title", "", "Title")
 		desc := fs.String("desc", "", "Description")
@@ -36,12 +37,17 @@ func HandleTask(role string) {
 			log.Fatal("Project ID and Title required")
 		}
 
+		var milestoneID *int64
+		if *mid != 0 {
+			milestoneID = mid
+		}
+
 		var sprintID *int64
 		if *sid != 0 {
 			sprintID = sid
 		}
 
-		id, err := cli.AddTask(db, *pid, sprintID, *title, *desc, *prio)
+		id, err := cli.AddTask(db, *pid, milestoneID, sprintID, *title, *desc, *prio)
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -50,6 +56,7 @@ func HandleTask(role string) {
 	case "list":
 		fs := flag.NewFlagSet("task list", flag.ExitOnError)
 		pid := fs.Int64("project", 0, "Project ID")
+		mid := fs.Int64("milestone", 0, "Milestone ID")
 		sid := fs.Int64("sprint", 0, "Sprint ID")
 		backlog := fs.Bool("backlog", false, "Show backlog only")
 		fs.Parse(argsToParse)
@@ -58,12 +65,17 @@ func HandleTask(role string) {
 			log.Fatal("Project ID required")
 		}
 
+		var milestoneID *int64
+		if *mid != 0 {
+			milestoneID = mid
+		}
+
 		var sprintID *int64
 		if *sid != 0 {
 			sprintID = sid
 		}
 
-		tasks, err := cli.ListTasks(db, *pid, sprintID, *backlog, role)
+		tasks, err := cli.ListTasks(db, *pid, milestoneID, sprintID, *backlog, role)
 		if err != nil {
 			log.Fatal(err)
 		}

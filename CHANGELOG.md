@@ -1,5 +1,17 @@
 # Changelog
 
+## v1.2.0 (2026-02-25)
+
+### Added
+- **Native Milestones Component** — Separated feature planning ("What") from time-boxed scheduling ("When").
+  - Added new `castra milestone add|list|update` commands (Architect only).
+  - Added `milestone_id` to `tasks`. Tasks can now concurrently belong to both a Milestone and a Sprint.
+  - Added `--milestone <id>` flag to `castra task add` and `list` commands.
+- **Architect Workflows Rewritten**
+  - `plan_feature.md`: Decomposes roadmap into Milestones with high-level Milestone tasks (no more pseudo "Feature Sprints").
+  - `plan_sprint.md`: Distills high-level Milestone tasks into Sprint-assigned granular work.
+- **Documentation**: Updated `CASTRA_OVERVIEW.md` and `README.md` to reflect the new three-tier structure (Project -> Milestone -> Sprint -> Task).
+
 ## v1.1.1 (2026-02-24)
 
 ### Fixed

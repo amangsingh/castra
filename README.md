@@ -68,23 +68,29 @@ castra init --antigravity
 castra project add --role architect --name "Project Alpha" --desc "Next-gen AI platform"
 ```
 
-**3. Define a Sprint (Architect)**
+**3. Define a Milestone (Architect)**
+```bash
+castra milestone add --role architect --project 1 --name "User Authentication"
+```
+
+**4. Schedule a Sprint (Architect)**
 ```bash
 castra sprint add --role architect --project 1 --name "Sprint 1" --start "2026-02-24" --end "2026-03-07"
 ```
 
-**4. Add a Task (Architect)**
+**5. Add Tasks representing Work (Architect)**
 ```bash
-castra task add --role architect --project 1 --sprint 1 --title "Setup DB" --desc "SQLite schema"
+# Add a task to both the milestone (the feature) and the sprint (the timeline)
+castra task add --role architect --project 1 --milestone 1 --sprint 1 --title "Setup DB" --desc "SQLite schema for users"
 ```
 
-**5. Work on Task (Senior Engineer)**
+**6. Work on Task (Senior Engineer)**
 ```bash
 castra task update --role senior-engineer --status doing 1
 castra task update --role senior-engineer --status review 1
 ```
 
-**6. Review & Approve (QA & Security)**
+**7. Review & Approve (QA & Security)**
 ```bash
 # QA approves (waits for Security)
 castra task update --role qa-functional --status done 1
@@ -93,7 +99,7 @@ castra task update --role qa-functional --status done 1
 castra task update --role security-ops --status done 1
 ```
 
-**7. Audit Trail**
+**8. Audit Trail**
 ```bash
 castra log list --role architect
 castra log add --role architect --msg "Completed Sprint 1 planning"

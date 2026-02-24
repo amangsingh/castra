@@ -97,6 +97,33 @@ var Migrations = []Migration{
 			return nil
 		},
 	},
+	{
+		Version:     3,
+		Description: "Add milestones table and milestone_id to tasks",
+		Func: func(tx *sql.Tx) error {
+			// Create milestones table
+			_, err := tx.Exec(`
+			CREATE TABLE IF NOT EXISTS milestones (
+				id INTEGER PRIMARY KEY AUTOINCREMENT,
+				project_id INTEGER NOT NULL,
+				name TEXT NOT NULL,
+				status TEXT NOT NULL DEFAULT 'open',
+				created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+				updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+				deleted_at DATETIME,
+				FOREIGN KEY(project_id) REFERENCES projects(id)
+			)`)
+			if err != nil {
+				return err
+			}
+
+			// Add milestone_id to tasks
+			if err := addColumnIfNotExists(tx, "tasks", "milestone_id", "INTEGER REFERENCES milestones(id)"); err != nil {
+				return err
+			}
+			return nil
+		},
+	},
 }
 
 // RunMigrations applies all pending migrations to the database.

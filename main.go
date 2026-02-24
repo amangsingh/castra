@@ -27,6 +27,8 @@ func main() {
 		commands.HandleInit()
 	case "project":
 		commands.HandleProject(role)
+	case "milestone":
+		commands.HandleMilestone(role)
 	case "sprint":
 		commands.HandleSprint(role)
 	case "task":
