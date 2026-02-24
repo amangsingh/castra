@@ -18,7 +18,7 @@ func main() {
 	// We use a simple helper to extract the role before dispatching.
 	role := getRoleFromArgs()
 	if role == "" && os.Args[1] != "init" {
-		fmt.Println("Error: --role <architect|engineer|qa|security> is required")
+		fmt.Println("Error: --role <architect|senior-engineer|junior-engineer|qa-functional|security-ops|doc-writer> is required")
 		os.Exit(1)
 	}
 
@@ -33,6 +33,8 @@ func main() {
 		commands.HandleTask(role)
 	case "note":
 		commands.HandleNote(role)
+	case "log":
+		commands.HandleLog(role)
 	default:
 		fmt.Printf("Unknown command: %s\n", os.Args[1])
 		printUsage()
@@ -42,13 +44,14 @@ func main() {
 
 func printUsage() {
 	fmt.Println("Usage: castra <command> --role <role> [subcommand] [flags]")
-	fmt.Println("\nRoles: architect, engineer, qa, security")
+	fmt.Println("\nRoles: architect, senior-engineer, junior-engineer, qa-functional, security-ops, doc-writer")
 	fmt.Println("\nCommands:")
 	fmt.Println("  init     Initialize workspace")
 	fmt.Println("  project  Manage projects")
 	fmt.Println("  sprint   Manage sprints")
 	fmt.Println("  task     Manage tasks")
 	fmt.Println("  note     Manage project notes")
+	fmt.Println("  log      View and add audit log entries")
 }
 
 func getRoleFromArgs() string {

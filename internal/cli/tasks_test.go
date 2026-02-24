@@ -1,51 +1,18 @@
 package cli
 
 import (
+	"castra/internal/db"
 	"database/sql"
 	"testing"
-
-	_ "modernc.org/sqlite"
 )
 
 func setupTestDB(t *testing.T) *sql.DB {
-	db, err := sql.Open("sqlite", ":memory:")
+	t.Helper()
+	database, err := db.InitDB(":memory:")
 	if err != nil {
-		t.Fatalf("Failed to open db: %v", err)
+		t.Fatalf("Failed to init DB: %v", err)
 	}
-
-	query := `
-	CREATE TABLE projects (
-		id INTEGER PRIMARY KEY AUTOINCREMENT,
-		name TEXT NOT NULL
-	);
-	CREATE TABLE tasks (
-		id INTEGER PRIMARY KEY AUTOINCREMENT,
-		project_id INTEGER NOT NULL,
-		sprint_id INTEGER,
-		title TEXT NOT NULL,
-		description TEXT,
-		status TEXT NOT NULL DEFAULT 'todo',
-		priority TEXT DEFAULT 'medium',
-		qa_approved BOOLEAN DEFAULT FALSE,
-		security_approved BOOLEAN DEFAULT FALSE,
-		created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-		updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-		deleted_at DATETIME
-	);
-	CREATE TABLE project_notes (
-		id INTEGER PRIMARY KEY AUTOINCREMENT,
-		project_id INTEGER NOT NULL,
-		content TEXT NOT NULL,
-		tags TEXT,
-		created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-		deleted_at DATETIME
-	);
-	`
-	_, err = db.Exec(query)
-	if err != nil {
-		t.Fatalf("Failed to create schema: %v", err)
-	}
-	return db
+	return database
 }
 
 func TestListNotes_RoleFiltering(t *testing.T) {
@@ -53,9 +20,6 @@ func TestListNotes_RoleFiltering(t *testing.T) {
 	defer db.Close()
 
 	// Seed notes
-	// 1: general (no tags)
-	// 2: engineering specific (tags: junior-engineer)
-	// 3: qa specific (tags: qa-functional)
 	_, err := db.Exec(`INSERT INTO project_notes (content, project_id, tags) VALUES 
 		('Note 1', 1, ''),
 		('Note 2', 1, 'junior-engineer'),
@@ -69,27 +33,13 @@ func TestListNotes_RoleFiltering(t *testing.T) {
 		expectedCount int
 	}{
 		{"architect", 3},       // Sees all
-		{"doc-writer", 3},      // Sees all (new requirement)
-		{"junior-engineer", 1}, // Sees 'junior-engineer' only (Note 2) - Wait, logic says contains OR nothing?
-		// Logic in notes.go:
-		// query := `SELECT ...` -> gets ALL
-		// then filtered by `containsRole`.
-		// Note 1 has empty tags. `containsRole("", "junior-engineer")` -> false.
-		// so it sees 1 note?
-		// Let's check `containsRole` logic.
+		{"doc-writer", 3},      // Sees all
+		{"junior-engineer", 1}, // Sees 'junior-engineer' tagged only
 	}
-
-	// Update expectations based on logic reading: filtering happens in Go.
-	// If tags contain role => include.
-	// Note 1: tags="" => exclude.
-	// Note 2: tags="junior-engineer" => include.
-	// Note 3: tags="qa-functional" => exclude.
-
-	// Wait, architect/doc-writer bypass filter.
 
 	for _, tt := range tests {
 		t.Run(tt.role, func(t *testing.T) {
-			notes, err := ListNotes(db, 1, tt.role)
+			notes, err := ListNotes(db, 1, nil, tt.role)
 			if err != nil {
 				t.Fatalf("ListNotes failed: %v", err)
 			}
@@ -100,15 +50,29 @@ func TestListNotes_RoleFiltering(t *testing.T) {
 	}
 }
 
+func TestListNotes_TaskFiltering(t *testing.T) {
+	db := setupTestDB(t)
+	defer db.Close()
+
+	// Seed: project-level note and task-level note
+	db.Exec(`INSERT INTO project_notes (content, project_id, task_id, tags) VALUES 
+		('Project note', 1, NULL, ''),
+		('Task note', 1, 42, 'qa-functional')`)
+
+	taskID := int64(42)
+	notes, err := ListNotes(db, 1, &taskID, "architect")
+	if err != nil {
+		t.Fatalf("ListNotes failed: %v", err)
+	}
+	if len(notes) != 1 {
+		t.Errorf("Expected 1 task-level note, got %d", len(notes))
+	}
+}
+
 func TestListTasks_RoleFiltering(t *testing.T) {
 	db := setupTestDB(t)
 	defer db.Close()
 
-	// Seed data
-	// 1: todo (visible to engineer, architect, doc-writer)
-	// 2: review (visible to qa, security, architect, doc-writer)
-	// 3: done (visible to architect, doc-writer)
-	// 4: blocked (visible to engineer, architect, doc-writer)
 	_, err := db.Exec(`INSERT INTO tasks (title, project_id, status) VALUES 
 		('Task 1', 1, 'todo'),
 		('Task 2', 1, 'review'),
@@ -147,7 +111,6 @@ func TestUpdateTaskStatus_RoleRestrictions(t *testing.T) {
 	db := setupTestDB(t)
 	defer db.Close()
 
-	// Create task
 	res, _ := db.Exec(`INSERT INTO tasks (title, project_id, status) VALUES ('Task 1', 1, 'todo')`)
 	id, _ := res.LastInsertId()
 
@@ -163,8 +126,7 @@ func TestUpdateTaskStatus_RoleRestrictions(t *testing.T) {
 		t.Errorf("Engineer failed to mark review: %v", err)
 	}
 
-	// 3. QA/Sec can only work on review (already review)
-	// Try to mark done by QA
+	// 3. QA approves
 	err = UpdateTaskStatus(db, id, "done", "qa-functional")
 	if err != nil {
 		t.Errorf("QA failed to approve: %v", err)
@@ -194,5 +156,41 @@ func TestUpdateTaskStatus_RoleRestrictions(t *testing.T) {
 	}
 	if !secApp {
 		t.Error("Sec approval not set")
+	}
+}
+
+func TestUpdateTaskStatus_RejectionResetsApprovals(t *testing.T) {
+	db := setupTestDB(t)
+	defer db.Close()
+
+	res, _ := db.Exec(`INSERT INTO tasks (title, project_id, status) VALUES ('Task 1', 1, 'review')`)
+	id, _ := res.LastInsertId()
+
+	// QA approves
+	UpdateTaskStatus(db, id, "done", "qa-functional")
+
+	var qaApp, secApp bool
+	db.QueryRow("SELECT qa_approved, security_approved FROM tasks WHERE id = ?", id).Scan(&qaApp, &secApp)
+	if !qaApp {
+		t.Fatal("QA approval should be set")
+	}
+
+	// Security REJECTS
+	err := UpdateTaskStatus(db, id, "todo", "security-ops")
+	if err != nil {
+		t.Fatalf("Security rejection failed: %v", err)
+	}
+
+	// Verify BOTH flags are reset
+	var status string
+	db.QueryRow("SELECT status, qa_approved, security_approved FROM tasks WHERE id = ?", id).Scan(&status, &qaApp, &secApp)
+	if status != "todo" {
+		t.Errorf("Task should be todo after rejection, got %s", status)
+	}
+	if qaApp {
+		t.Error("QA approval should be reset after rejection")
+	}
+	if secApp {
+		t.Error("Security approval should be reset after rejection")
 	}
 }

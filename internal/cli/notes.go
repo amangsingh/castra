@@ -8,31 +8,40 @@ import (
 type Note struct {
 	ID        int64
 	ProjectID int64
+	TaskID    *int64
 	Content   string
 	Tags      string
 }
 
-func AddNote(db *sql.DB, projectID int64, content, tags string) (int64, error) {
-	query := `INSERT INTO project_notes (project_id, content, tags) VALUES (?, ?, ?)`
-	res, err := db.Exec(query, projectID, content, tags)
+func AddNote(db *sql.DB, projectID int64, taskID *int64, content, tags string) (int64, error) {
+	query := `INSERT INTO project_notes (project_id, task_id, content, tags) VALUES (?, ?, ?, ?)`
+	res, err := db.Exec(query, projectID, taskID, content, tags)
 	if err != nil {
 		return 0, err
 	}
 	return res.LastInsertId()
 }
 
-func ListNotes(db *sql.DB, projectID int64, role string) ([]Note, error) {
-	// Architect and Doc Writer see all
-	if role == "architect" || role == "doc-writer" {
-		query := `SELECT id, project_id, content, tags FROM project_notes WHERE project_id = ? AND deleted_at IS NULL ORDER BY created_at DESC`
-		return queryNotes(db, query, projectID)
+func ListNotes(db *sql.DB, projectID int64, taskID *int64, role string) ([]Note, error) {
+	// Build base query
+	query := `SELECT id, project_id, task_id, content, tags FROM project_notes WHERE project_id = ? AND deleted_at IS NULL`
+	args := []interface{}{projectID}
+
+	// Filter by task if provided
+	if taskID != nil {
+		query += ` AND task_id = ?`
+		args = append(args, *taskID)
 	}
 
-	// Others see if tags contain their role OR "all" (convention)
-	// SQLite LIKE is case-insensitive by default for ASCII
-	// We handle filtering via query or code. Code is safer for comma-separated checks.
-	query := `SELECT id, project_id, content, tags FROM project_notes WHERE project_id = ? AND deleted_at IS NULL ORDER BY created_at DESC`
-	allNotes, err := queryNotes(db, query, projectID)
+	query += ` ORDER BY created_at DESC`
+
+	// Architect and Doc Writer see all notes
+	if role == "architect" || role == "doc-writer" {
+		return queryNotes(db, query, args...)
+	}
+
+	// Others see only notes tagged for their role
+	allNotes, err := queryNotes(db, query, args...)
 	if err != nil {
 		return nil, err
 	}
@@ -56,7 +65,7 @@ func queryNotes(db *sql.DB, query string, args ...interface{}) ([]Note, error) {
 	var notes []Note
 	for rows.Next() {
 		var n Note
-		if err := rows.Scan(&n.ID, &n.ProjectID, &n.Content, &n.Tags); err != nil {
+		if err := rows.Scan(&n.ID, &n.ProjectID, &n.TaskID, &n.Content, &n.Tags); err != nil {
 			return nil, err
 		}
 		notes = append(notes, n)

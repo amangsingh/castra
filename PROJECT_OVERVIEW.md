@@ -22,47 +22,59 @@ Castra enforces separation of concerns through specialized roles. Each role has 
 *   **Bounds & Abilities:** Absolute power. The god in the machine.
 *   **Status Control:** Can move **any** task to **any** status at any time.
 *   **Context Lens:** Sees the entire universe: all projects, sprints, and tasks. Unfiltered.
-*   **Log Interaction:** Read-only access to all Logs to monitor system health.
 *   **Prohibition:** Does not write code. Does not execute. Only commands.
 
-### 2. Senior Engineer (`--role engineer`)
+### 2. Senior Engineer (`--role senior-engineer`)
 *   **Identity:** The builder of load-bearing walls and foundational pillars.
 *   **Bounds & Abilities:** Bound by the plan. Solves hard problems and architectural puzzles.
 *   **Status Control:** `todo` -> `doing` -> `review`.
 *   **Context Lens:** Filtered. Sees only assigned tasks. Blind to QA/Architect concerns.
 *   **Prohibition:** **Cannot** mark tasks as `done`. Cannot approve own work.
 
-### 3. Junior Engineer (`--role engineer`)
+### 3. Junior Engineer (`--role junior-engineer`)
 *   **Identity:** The maintainer. Keeper of the city.
 *   **Bounds & Abilities:** Executes simple, precise tasks (bug fixes, tweaks).
 *   **Status Control:** `todo` -> `doing` -> `review`.
 *   **Context Lens:** Filtered. Sees only assigned tasks.
 *   **Prohibition:** Does not architect new systems. **Cannot** mark tasks as `done`.
 
-### 4. Functional QA (`--role qa`)
+### 4. Functional QA (`--role qa-functional`)
 *   **Identity:** The Guardian of Intent. User's advocate.
 *   **Bounds & Abilities:** The crucible of review.
 *   **Status Control:** Sees only tasks in `review`.
-    *   **Approve:** Casts vote for `done`.
-    *   **Reject:** Sends back to `todo` with failure note.
+    *   **Approve:** Casts vote for `done` (sets `qa_approved=true`).
+    *   **Reject:** Sends back to `todo`.
 *   **Lock:** Approval is **conditional**. Task waits for Security.
 *   **Prohibition:** Does not read source code. Only tests behavior.
 
-### 5. Security Ops (`--role security`)
+### 5. Security Ops (`--role security-ops`)
 *   **Identity:** The Sentinel of the Citadel.
 *   **Bounds & Abilities:** The crucible of review. Auditor of vulnerabilities.
 *   **Status Control:** Sees only tasks in `review`.
-    *   **Approve:** Casts vote for `done`.
-    *   **Reject:** Sends back to `todo` with vulnerability report.
+    *   **Approve:** Casts vote for `done` (sets `security_approved=true`).
+    *   **Reject:** Sends back to `todo`.
 *   **Lock:** Approval is **conditional**. Task waits for QA.
 *   **Prohibition:** Does not care if features work. Only cares if they are safe.
 
-### 6. Doc Writer (`--role doc-writer`) *(Concept)*
+### 6. Doc Writer (`--role doc-writer`)
 *   **Identity:** The Scribe. Memory of the legion.
 *   **Bounds & Abilities:** Historian of the victors. Works on `done` tasks.
-*   **Status Control:** Read-only access to `done` tasks.
-*   **Log Interaction:** Read-only access to Logs of completed work.
+*   **Status Control:** Read-only access.
+*   **Context Lens:** Sees all tasks and notes to ensure complete documentation.
 *   **Prohibition:** Does not create, test, or approve. Only observes and records.
+
+---
+
+## Modular Skill System
+
+Castra generates a dedicated environment for each agent role in `.agent/skills/`. This structure is dynamically generated from embedded templates.
+
+### Package Structure
+Each role directory (e.g., `.agent/skills/architect/`) contains:
+*   **`SKILL.md`**: The detailed role definition, constraints, and identity.
+*   **`examples.md`**: Role-specific CLI command examples.
+*   **`error_handling.md`**: Protocols for handling errors and permission denials.
+*   **`scripts/main.go`**: A Go source file that acts as a wrapper for the `castra` CLI. It automatically injects the correct `--role` flag, allowing agents to simply run `go run main.go [command]`.
 
 ---
 
@@ -71,12 +83,9 @@ Castra enforces separation of concerns through specialized roles. Each role has 
 Project context is maintained locally and persistently in `workspace.db`.
 
 *   **The Universal Constitution:** A generated `rules.md` file that codifies the laws of the workspace.
-*   **The Souls of the Legion:** Generated `SKILL.md` files for each role, defining their identity and capabilities.
-*   **Strict RBAC:** Command-line enforcement of role permissions.
-*   **Dual-Approval Lock:** Tasks strictly require **both** QA and Security sign-off to be completed.
-*   **Smart Filtering:** Automatic filtering of tasks (`todo`, `doing`, `review`, `done`) based on the active role.
-*   **Contextual Notes:** Tag-based note system (`#engineer`, `#qa`, `#security`) for role-specific communication.
-*   **Soft Deletes:** Safety mechanism to prevent accidental data loss.
+*   **Strict RBAC:** Command-line enforcement of role permissions using precise role names (e.g., `senior-engineer` vs `junior-engineer`).
+*   **Dual-Approval Lock:** Tasks strictly require **both** QA (`qa-functional`) and Security (`security-ops`) sign-off to be completed.
+*   **Smart Filtering:** Automatic filtering of tasks based on the active role's context.
 
 ## Usage
 
@@ -87,9 +96,18 @@ castra init --antigravity
 # Add Project (Architect)
 castra project add --role architect ...
 
-# Work on Task (Engineer)
-castra task update --role engineer ...
+# Work on Task (Senior Engineer)
+castra task update --role senior-engineer ...
 
-# Verify (QA/Security)
-castra task update --role qa ...
+# Verify (QA Functional)
+castra task update --role qa-functional ...
+```
+
+**Using Wrapper Scripts:**
+Agents can also use their generated wrapper scripts to avoid manually typing the role flag:
+
+```bash
+# As Architect
+cd .agent/skills/architect/scripts
+go run main.go project add ...
 ```

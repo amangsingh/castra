@@ -1,7 +1,7 @@
 package commands
 
 import (
-	"castra/internal/generator"
+	antigravitygen "castra/internal/generator/antigravity"
 	"flag"
 	"fmt"
 	"log"
@@ -11,13 +11,13 @@ import (
 func HandleInit() {
 	// Parse flags for init
 	fs := flag.NewFlagSet("init", flag.ExitOnError)
-	antigravity := fs.Bool("antigravity", false, "Initialize for Antigravity platform")
+	useAntigravity := fs.Bool("antigravity", false, "Initialize for Antigravity platform")
 
 	// Simple approach: Use FilterArgs on everything after os.Args[1]
 	argsToParse := FilterArgs(os.Args[2:])
 	fs.Parse(argsToParse)
 
-	if !*antigravity {
+	if !*useAntigravity {
 		fmt.Println("Error: initialization requires a target platform.")
 		fmt.Println("Usage: castra init --antigravity")
 		fmt.Println("(Support for other platforms coming soon)")
@@ -32,7 +32,7 @@ func HandleInit() {
 	database := GetDB()
 	database.Close()
 
-	if err := generator.InitWorkspace(cwd); err != nil {
+	if err := antigravitygen.InitWorkspace(cwd); err != nil {
 		log.Fatalf("Failed to init workspace: %v", err)
 	}
 	fmt.Println("Castra initialized for Antigravity.")

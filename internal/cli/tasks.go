@@ -96,6 +96,17 @@ func UpdateTaskStatus(db *sql.DB, id int64, newStatus string, role string) error
 			return fmt.Errorf("%s can only process tasks in 'review' status", role)
 		}
 
+		if newStatus == "todo" {
+			// Rejection: reset BOTH approval flags to force fresh verification
+			_, err := db.Exec(`UPDATE tasks SET qa_approved = false, security_approved = false, status = 'todo', updated_at = CURRENT_TIMESTAMP WHERE id = ?`, id)
+			if err != nil {
+				return err
+			}
+			LogTaskAction(db, id, "rejected", role, "Task rejected from review to todo. All approvals reset.")
+			fmt.Printf("Task rejected by %s. All approvals reset. Task returned to todo.\n", role)
+			return nil
+		}
+
 		if newStatus == "done" {
 			// Register Approval
 			if role == "qa-functional" {
@@ -113,9 +124,11 @@ func UpdateTaskStatus(db *sql.DB, id int64, newStatus string, role string) error
 
 			// Check Lock: Both must be true to transition to DONE
 			if !qaApp || !secApp {
+				LogTaskAction(db, id, "approved", role, "Approval granted. Waiting for other gate.")
 				fmt.Printf("Task approved by %s. Waiting for other approval to mark DONE.\n", role)
 				return nil // Not an error, just didn't transition status yet
 			}
+			LogTaskAction(db, id, "approved", role, "Final approval granted. Both gates passed.")
 			// Fallthrough to update status to done
 		}
 	case "doc-writer":
@@ -123,6 +136,9 @@ func UpdateTaskStatus(db *sql.DB, id int64, newStatus string, role string) error
 	}
 
 	_, err = db.Exec(`UPDATE tasks SET status = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?`, newStatus, id)
+	if err == nil {
+		LogTaskAction(db, id, "status_change", role, fmt.Sprintf("Status changed from '%s' to '%s'", currentStatus, newStatus))
+	}
 	return err
 }
 

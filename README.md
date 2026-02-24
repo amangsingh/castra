@@ -1,133 +1,114 @@
 # Castra
 
-**The High-Integrity, Role-Based Project Management CLI**
+**The Universal Protocol for Agentic Software Development**
 
-Castra is a specialized, pure CLI tool designed for strict, local project management. It operates directly on a local SQLite database (`workspace.db`), eliminating the complexity of client-server architectures while enforcing a rigid, role-based workflow.
+Castra is a standalone Go binary that serves as the coordination protocol for autonomous digital work. It operates directly on a local SQLite database (`workspace.db`), eliminating the complexity of client-server architectures while enforcing a role-based, dual-approval workflow.
 
 > **"The workspace.db is the only truth."** — *The Universal Constitution*
 
+For a comprehensive technical deep-dive, see [CASTRA_OVERVIEW.md](CASTRA_OVERVIEW.md).
+
 ## Features
 
-*   **Zero-Config:** Runs entirely locally. No servers, no clouds, no accounts.
+*   **Zero-Config:** Runs entirely locally. No servers, no clouds, no accounts. Single standalone binary.
 *   **Role-Based Access Control (RBAC):** Enforces separation of concerns via the `--role` flag.
-    *   **Architect:** The planner (God mode).
-    *   **Engineer:** The builder (Execution only).
-    *   **QA:** The verifier (Review gatekeeper).
-    *   **Security:** The auditor (Review gatekeeper).
-*   **Dual-Approval Locks:** Tasks cannot be marked `done` without explicit approval from **both** QA and Security.
-*   **Contextual Notes:** Tag-based notes for role-specific communication (e.g., `#security` checklists).
-*   **Universal Constitution:** Generates a set of immutable rules and role definitions (`.agent/rules/`) to guide AI agents or human users.
+    *   **Architect (`architect`):** The planner (God mode).
+    *   **Senior Engineer (`senior-engineer`):** The builder (Complex problems).
+    *   **Junior Engineer (`junior-engineer`):** The maintainer (Bug fixes, tweaks).
+    *   **Functional QA (`qa-functional`):** The verifier (Review gatekeeper).
+    *   **Security Ops (`security-ops`):** The auditor (Review gatekeeper).
+    *   **Doc Writer (`doc-writer`):** The scribe (Documentation).
+*   **Dual-Approval Locks:** Tasks cannot be marked `done` without explicit approval from **both** QA and Security. Rejections reset all approval flags.
+*   **Task-Level Notes:** Notes scoped to specific tasks enable the rejection feedback loop — QA/Security attach structured rejection reasons directly to the task.
+*   **Audit Trail:** Immutable audit log with auto-logging of status changes, approvals, and rejections.
+*   **Versioned Schema Migrations:** Automatic database schema evolution with backward compatibility for pre-migration databases.
+*   **Workflow System:** Step-by-step operational protocols for every role, generated into `.agent/workflows/` on init.
+*   **The Universal Constitution:** The Three Gates of Conformance — a constraint architecture that eliminates LLM compliance drift.
+*   **Platform Extensibility:** Generator abstraction layer ready for `--copilot`, `--gemini-cli`, and more.
 
 ## Installation
 
 ### Pre-built Binaries
-You can download the latest pre-built binaries for macOS, Linux, and Windows from our [GitHub Releases](https://github.com/yourusername/castra/releases) page.
+Download the latest binaries from [GitHub Releases](https://github.com/AmanSingh494/castra/releases).
 
-**Installation Steps:**
+**macOS / Linux:**
+```bash
+# Download and install
+chmod +x castra-mac
+xattr -d com.apple.quarantine castra-mac   # macOS only, if downloaded via browser
+mv castra-mac /usr/local/bin/castra
 
-1.  **Download** the binary for your platform (e.g., `castra-mac`, `castra-linux`, or `castra-windows.exe`).
-2.  **Rename** the file to `castra` (or `castra.exe` on Windows).
-3.  **Move** it to a directory in your system's `PATH`.
+# Verify
+castra init --antigravity
+```
 
-    *   **macOS / Linux:**
-**Installation Steps (macOS / Linux):**
-
-1.  **Download** the binary (e.g., `castra-mac`).
-2.  **Make Executable:** This is critical.
-    ```bash
-    chmod +x castra-mac
-    ```
-    *macOS Note:* If you downloaded via a browser, you might need to remove the quarantine flag:
-    ```bash
-    xattr -d com.apple.quarantine castra-mac
-    ```
-3.  **Rename & Move:**
-    ```bash
-    mv castra-mac castra
-    sudo mv castra /usr/local/bin/
-    ```
-4.  **Verify:**
-    ```bash
-    castra init --antigravity
-    ```
-
-**Installation Steps (Windows):**
-1.  Rename `castra-windows.exe` to `castra.exe`.
-2.  Move it to a folder in your `%PATH%` (e.g., `C:\Windows\System32` or create a `C:\Tools` folder and add it to Environment Variables).
+**Windows:**
+1. Rename `castra-windows.exe` to `castra.exe`.
+2. Move it to a folder in your `%PATH%`.
 
 ### Build from Source
 Requirements: [Go](https://go.dev/) 1.22+
 
 ```bash
-git clone https://github.com/yourusername/castra.git
+git clone https://github.com/AmanSingh494/castra.git
 cd castra
-go build -o castra main.go
-```
-
-### Path Setup (Critical)
-Castra relies on the binary being accessible in your system's `PATH`.
-
-**Mac/Linux:**
-```bash
+go build -o castra .
 sudo mv castra /usr/local/bin/
 ```
-
-**Windows:**
-Move `castra.exe` to a folder in your `%PATH%` (e.g., `C:\Windows\System32` or a custom tools folder).
-
-### Troubleshooting
-*   **"Permission denied":** Run `chmod +x /usr/local/bin/castra`.
-*   **"Command not found":** Ensure `/usr/local/bin` is in your PATH (`echo $PATH`). If using `sudo`, your secure_path might be strict; try running with full path: `sudo /usr/local/bin/castra ...` or fix permissions so `sudo` isn't needed for read-only commands.
 
 ## Usage
 
 **1. Initialize a Workspace**
 ```bash
-# Creates workspace.db and .agent/ rules (for Antigravity platform)
-./castra init --antigravity
+castra init --antigravity
 ```
 
 **2. Create a Project (Architect)**
 ```bash
-./castra project add --role architect --name "Project Alpha" --desc "Next-gen AI"
+castra project add --role architect --name "Project Alpha" --desc "Next-gen AI platform"
 ```
 
 **3. Define a Sprint (Architect)**
 ```bash
-./castra sprint add --role architect --project 1 --name "Sprint 1" --start "2024-01-01" --end "2024-01-14"
+castra sprint add --role architect --project 1 --name "Sprint 1" --start "2026-02-24" --end "2026-03-07"
 ```
 
 **4. Add a Task (Architect)**
 ```bash
-./castra task add --role architect --project 1 --sprint 1 --title "Setup DB" --desc "Use SQLite"
+castra task add --role architect --project 1 --sprint 1 --title "Setup DB" --desc "SQLite schema"
 ```
 
-**5. Work on Task (Engineer)**
+**5. Work on Task (Senior Engineer)**
 ```bash
-# Engineer moves task to 'doing'
-./castra task update --role engineer --status doing 1
-
-# Engineer moves task to 'review' (Requesting approval)
-./castra task update --role engineer --status review 1
+castra task update --role senior-engineer --status doing 1
+castra task update --role senior-engineer --status review 1
 ```
 
 **6. Review & Approve (QA & Security)**
 ```bash
-# QA approves (Task stays in 'review' until Security also approves)
-./castra task update --role qa --status done 1
+# QA approves (waits for Security)
+castra task update --role qa-functional --status done 1
 
-# Security approves (Task transitions to 'done')
-./castra task update --role security --status done 1
+# Security approves (task transitions to done)
+castra task update --role security-ops --status done 1
+```
+
+**7. Audit Trail**
+```bash
+castra log list --role architect
+castra log add --role architect --msg "Completed Sprint 1 planning"
 ```
 
 ## The Roles
 
-*   **Architect (`--role architect`):** The planner. Manages projects, sprints, and tasks.
-*   **Senior Engineer (`--role engineer`):** The builder. Solves complex problems. Cannot mark `done`.
-*   **Junior Engineer (`--role engineer`):** The maintainer. Fixes bugs and tweaks. Cannot mark `done`.
-*   **Functional QA (`--role qa`):** The verifier. Approves functionality.
-*   **Security Ops (`--role security`):** The auditor. Approves compliance.
-*   **Doc Writer (`--role doc-writer`):** The scribe. Read-only access to `done` tasks for documentation.
+| Role | Flag | Power | Prohibition |
+|------|------|-------|-------------|
+| **Architect** | `--role architect` | God mode. Manages everything. | Cannot write code. |
+| **Senior Engineer** | `--role senior-engineer` | Complex problem solving. | Cannot mark `done`. |
+| **Junior Engineer** | `--role junior-engineer` | Bug fixes, tweaks. | Cannot mark `done`. Cannot architect. |
+| **Functional QA** | `--role qa-functional` | First key to `done`. | Cannot read source code. |
+| **Security Ops** | `--role security-ops` | Second key to `done`. Veto is absolute. | Only cares about security. |
+| **Doc Writer** | `--role doc-writer` | Documents completed work. | Read-only. Cannot change status. |
 
 ## License
 
