@@ -1,5 +1,12 @@
 # Changelog
 
+## v1.1.1 (2026-02-24)
+
+### Fixed
+- **Empty `workflows/` directories** — `castra init` no longer creates empty `workflows/` subdirectories inside `.agent/skills/<role>/`. Workflow files are correctly routed to `.agent/workflows/` only.
+- **Scripts compiled to binaries** — Role wrapper scripts (`main.go`) are now compiled to native executables at init time instead of being deployed as Go source. Falls back to shell script wrappers if Go is not installed.
+- **Workflow filename collision** — Junior engineer's `build_cycle.md` and `handle_rejection.md` were overwriting senior engineer's identically-named files. Renamed to `jr_build_cycle.md` and `jr_handle_rejection.md`. All 13 workflows now deploy correctly.
+
 ## v1.1.0 (2026-02-24)
 
 ### Added
