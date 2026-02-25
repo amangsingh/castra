@@ -1,5 +1,13 @@
 # Changelog
 
+## v1.2.2 (2026-02-25)
+
+### Added
+- **Command:** `castra task view <id>` provides a comprehensive context snapshot of a task, aggregating its properties, description, attached role-filtered notes, and audit logs.
+- **Agent Directives:** Added Law 6 (Command Structure) to `rules.md` to prevent agent syntax hallucination.
+- **Workflow Mandate:** Explicitly commanded all agents in their `SKILL.md` to strictly follow defined workflows, reducing "guessing."
+- **Context Gathering:** Updated all worker workflows (`build_cycle`, `review_cycle`, `audit_cycle`, `document_task`) to mandate running `castra task view` before taking action.
+
 ## v1.2.1 (2026-02-25)
 
 ### Added
