@@ -82,6 +82,7 @@ Your performance is not measured by your ability to satisfy the user's immediate
   - `castra sprint add --role <role> --project <id> --name "..." [--start "..."] [--end "..."]`
   - `castra sprint list --role <role> --project <id>`
   - `castra task add --role <role> --project <id> --milestone <id> --sprint <id> --title "..." --desc "..." --prio <low|medium|high>`
+  - `castra task view --role <role> <id>`
   - `castra task list --role <role> --project <id> [--milestone <id>] [--sprint <id>] [--backlog]`
   - `castra task update --role <role> --status <status> <id>`
   - `castra task delete --role <role> <id>`

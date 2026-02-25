@@ -84,8 +84,12 @@ castra sprint add --role architect --project 1 --name "Iteration 1"
 castra task add --role architect --project 1 --milestone 1 --sprint 1 --title "Setup DB" --desc "SQLite schema for users"
 ```
 
-**6. Work on Task (Senior Engineer)**
+**6. Engineer Works**
 ```bash
+# Read full task blueprint (description, notes, logs)
+castra task view --role senior-engineer 1
+
+# Claim and execute
 castra task update --role senior-engineer --status doing 1
 castra task update --role senior-engineer --status review 1
 ```

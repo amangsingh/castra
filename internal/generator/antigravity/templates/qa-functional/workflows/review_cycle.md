@@ -16,10 +16,10 @@ go run main.go task list --project <ProjectID>
 *(Run this from within your scripts directory)*
 
 ## Step 1.2: Read the Specification
-**Action:** For each task in review, read the task's title, description, and any associated notes. The description is your test plan. The notes may contain architectural context from the Architect or implementation notes from the engineer.
+**Action:** For each task in review, fetch its complete context. This includes the task description (your test plan), architectural notes, engineer implementation details, and the audit log.
 **Command:**
 ```bash
-go run main.go note list --project <ProjectID> --task <TaskID>
+go run main.go task view <TaskID>
 ```
 
 ## Step 1.3: Execute Functional Tests

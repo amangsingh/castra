@@ -90,6 +90,65 @@ func HandleTask(role string) {
 			fmt.Printf("[%d] %s (%s) %s\n", t.ID, t.Title, t.Status, approvals)
 		}
 
+	case "view":
+		fs := flag.NewFlagSet("task view", flag.ExitOnError)
+		fs.Parse(argsToParse)
+
+		idParsed := fs.Args() // Remaining args after flags
+		if len(idParsed) < 1 {
+			log.Fatal("Task ID required")
+		}
+		id, _ := strconv.ParseInt(idParsed[0], 10, 64)
+
+		task, err := cli.GetTask(db, id)
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		approvals := ""
+		if task.QAApproved {
+			approvals += "[QA Approved] "
+		}
+		if task.SecurityApproved {
+			approvals += "[Security Approved]"
+		}
+
+		fmt.Printf("--- Task [%d]: %s ---\n", task.ID, task.Title)
+		fmt.Printf("Status:   %s %s\n", task.Status, approvals)
+		fmt.Printf("Priority: %s\n", task.Priority)
+		fmt.Printf("Project:  %d\n", task.ProjectID)
+		if task.MilestoneID != nil {
+			fmt.Printf("Milestone: %d\n", *task.MilestoneID)
+		}
+		if task.SprintID != nil {
+			fmt.Printf("Sprint:   %d\n", *task.SprintID)
+		}
+		fmt.Printf("\nDescription:\n%s\n", task.Description)
+
+		fmt.Println("\n--- Notes ---")
+		notes, err := cli.ListNotes(db, task.ProjectID, &id, role)
+		if err == nil {
+			if len(notes) == 0 {
+				fmt.Println("No notes found for this role.")
+			} else {
+				for _, n := range notes {
+					fmt.Printf("[Tags: %s] %s\n", n.Tags, n.Content)
+				}
+			}
+		}
+
+		fmt.Println("\n--- Audit Log ---")
+		logs, err := cli.ListAuditEntries(db, "task", &id)
+		if err == nil {
+			if len(logs) == 0 {
+				fmt.Println("No logs found.")
+			} else {
+				for _, l := range logs {
+					fmt.Printf("[%s] %s: %s\n", l.Timestamp, l.Role, l.Payload)
+				}
+			}
+		}
+
 	case "update":
 		fs := flag.NewFlagSet("task update", flag.ExitOnError)
 		status := fs.String("status", "", "New Status")

@@ -15,10 +15,10 @@ go run main.go task list --project <ProjectID>
 ```
 
 ## Step 1.2: Gather the Full Context
-**Action:** For the target task, read all associated notes. These contain the architect's intent, the engineer's implementation notes, and any QA/Security feedback. This is your source material.
+**Action:** For the target task, read its complete context including title, description, attached notes, and audit logs. This contains the architect's intent, the engineer's implementation notes, and any QA/Security feedback. This is your source material.
 **Command:**
 ```bash
-go run main.go note list --project <ProjectID> --task <TaskID>
+go run main.go task view <TaskID>
 ```
 
 ## Step 1.3: Produce the Documentation

@@ -16,10 +16,10 @@ go run main.go task list --project <ProjectID>
 *(Run this from within your scripts directory)*
 
 ## Step 1.2: Understand the Attack Surface
-**Action:** For each task in review, read the task's title, description, and any associated notes. Understand what the code does so you can identify what it exposes.
+**Action:** For each task in review, fetch its complete context using the view command. Read the task description, architectural notes, implementation details, and the audit log. Understand what the code does so you can identify what it exposes.
 **Command:**
 ```bash
-go run main.go note list --project <ProjectID> --task <TaskID>
+go run main.go task view <TaskID>
 ```
 
 ## Step 1.3: Conduct the Security Audit

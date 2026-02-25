@@ -28,6 +28,19 @@ func AddTask(db *sql.DB, projectID int64, milestoneID, sprintID *int64, title, d
 	return res.LastInsertId()
 }
 
+func GetTask(db *sql.DB, id int64) (*Task, error) {
+	var t Task
+	query := `SELECT id, project_id, milestone_id, sprint_id, title, COALESCE(description, ''), status, priority, qa_approved, security_approved FROM tasks WHERE id = ? AND deleted_at IS NULL`
+	err := db.QueryRow(query, id).Scan(&t.ID, &t.ProjectID, &t.MilestoneID, &t.SprintID, &t.Title, &t.Description, &t.Status, &t.Priority, &t.QAApproved, &t.SecurityApproved)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return nil, fmt.Errorf("task not found")
+		}
+		return nil, err
+	}
+	return &t, nil
+}
+
 func ListTasks(db *sql.DB, projectID int64, milestoneID, sprintID *int64, backlogOnly bool, role string) ([]Task, error) {
 	query := `SELECT id, project_id, milestone_id, sprint_id, title, COALESCE(description, ''), status, priority, qa_approved, security_approved FROM tasks WHERE project_id = ? AND deleted_at IS NULL`
 	args := []interface{}{projectID}

@@ -225,6 +225,7 @@ castra milestone update --role architect --status <open|completed> <id>
 Manages granular work items.
 ```bash
 castra task add --role architect --project <id> --milestone <id> --sprint <id> --title "..." --desc "..." --prio <low|medium|high>
+castra task view --role <role> <id>
 castra task list --role <role> --project <id> [--milestone <id>] [--sprint <id>] [--backlog]
 castra task update --role <role> --status <status> <id>
 castra task delete --role architect <id>
