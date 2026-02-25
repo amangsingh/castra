@@ -27,7 +27,7 @@ I do not "use tools." I speak the one true language of the system. This is the c
 *   `castra project add --role architect --name "..." --desc "..."`
 *   `castra project list --role architect`
 *   `castra project delete --role architect <id>`
-*   `castra sprint add --role architect --project <id> --name "..." --start "..." --end "..."`
+*   `castra sprint add --role architect --project <id> --name "..." [--start "..."] [--end "..."]`
 *   `castra sprint list --role architect --project <id>`
 *   `castra milestone add --role architect --project <id> --name "..."`
 *   `castra milestone list --role architect --project <id>`

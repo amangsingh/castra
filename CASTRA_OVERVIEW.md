@@ -73,7 +73,7 @@ projects (id, name, description, status, notes, created_at, updated_at, deleted_
 -- Milestones: Major feature groupings or epic roadmaps within a project
 milestones (id, project_id, name, status, created_at, updated_at, deleted_at)
 
--- Sprints: Time-boxed execution iterations within a project
+-- Sprints: Execution iterations (batches/sessions) within a project
 sprints (id, project_id, name, start_date, end_date, status, created_at, deleted_at)
 
 -- Tasks: The granular units of work
@@ -206,8 +206,9 @@ castra project delete --role architect <id>                       # Soft delete
 **Permissions:** Only `architect` can add/delete. All roles can list.
 
 ### `castra sprint`
+Manages execution iterations (dates are optional strings, useful for either calendar weeks or AI "sessions").
 ```bash
-castra sprint add --role architect --project <id> --name "..." --start "YYYY-MM-DD" --end "YYYY-MM-DD"
+castra sprint add --role architect --project <id> --name "..." [--start "..."] [--end "..."]
 castra sprint list --role <role> --project <id>
 ```
 **Permissions:** Only `architect` can add. All roles can list.
@@ -368,11 +369,11 @@ go build -o castra .
 # 3. Create a project (as Architect)
 ./castra project add --role architect --name "Project Alpha" --desc "Next-gen AI platform"
 
-# 4. Create a sprint
-./castra sprint add --role architect --project 1 --name "Sprint 1" --start "2026-02-24" --end "2026-03-07"
+# 4. Create an iteration/sprint
+./castra sprint add --role architect --project 1 --name "Iteration 1"
 
-# 5. Add tasks
-./castra task add --role architect --project 1 --sprint 1 --title "Setup DB" --desc "SQLite schema"
+# 5. Add a task to the milestone and sprint
+./castra task add --role architect --project 1 --milestone 1 --sprint 1 --title "Setup DB" --desc "SQLite schema"
 
 # 6. Engineer works
 ./castra task update --role senior-engineer --status doing 1

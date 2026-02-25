@@ -73,9 +73,9 @@ castra project add --role architect --name "Project Alpha" --desc "Next-gen AI p
 castra milestone add --role architect --project 1 --name "User Authentication"
 ```
 
-**4. Schedule a Sprint (Architect)**
+**4. Schedule an Iteration / Sprint (Architect)**
 ```bash
-castra sprint add --role architect --project 1 --name "Sprint 1" --start "2026-02-24" --end "2026-03-07"
+castra sprint add --role architect --project 1 --name "Iteration 1"
 ```
 
 **5. Add Tasks representing Work (Architect)**

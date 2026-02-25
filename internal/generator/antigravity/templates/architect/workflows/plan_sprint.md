@@ -8,10 +8,11 @@ description: Phase 3 - Tactical Planning (Work Order Generation)
 **Goal:** To break down a high-level roadmap task into a series of small, concrete, and immediately actionable tasks for the engineering team, and schedule them into a time-box.
 
 ## Step 3.1: Create a Time-Boxed "Active Sprint"
-**Action:** Create a new, short-term sprint for the upcoming development cycle (e.g., one or two weeks). The name should be specific and indicate the cycle. Sprints manage the *when*.
+**Action:** Create a new, short-term sprint for the upcoming development cycle (e.g., an "Iteration Batch" or "Session"). Sprints manage the *when*.
+**Dates are Optional:** For AI agents, a sprint might take 10 minutes, so `start` and `end` dates/labels are purely optional strings for context (e.g., `--start "Session 1"` or omitted entirely).
 **Command:**
 ```bash
-castra sprint add --role architect --project <ProjectID> --name "Sprint 1: Auth Backend (Week of Feb 19)" --start "2026-02-19" --end "2026-02-26"
+castra sprint add --role architect --project <ProjectID> --name "Iteration 1: Backend Scaffolding"
 ```
 **Capture:** Record the Active Sprint ID.
 

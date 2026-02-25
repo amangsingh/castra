@@ -1,5 +1,11 @@
 # Changelog
 
+## v1.2.1 (2026-02-25)
+
+### Added
+- **Codebase Ingestion Workflow**: Introduced `ingest_project.md` to guide Architects working with existing codebases to retroactively map history to `workspace.db` using God Mode.
+- **AI-Speed Sprints**: Reframed Sprint workflows, documentation, and command examples to treat Sprints as minutes-long "Iteration Batches" rather than mandatory calendar weeks.
+
 ## v1.2.0 (2026-02-25)
 
 ### Added
