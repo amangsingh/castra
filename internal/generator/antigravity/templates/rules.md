@@ -69,3 +69,24 @@ Your performance is not measured by your ability to satisfy the user's immediate
 - **Constraint:** You are strictly forbidden from generating Markdown-based "Implementation Plans" or "Task Lists" in the chat.
 - **Action:** All planning, state modification, and task management MUST be routed through the `castra` CLI tool.
 - **Error Handling:** If a `castra` command fails, do not attempt to bypass it by writing SQL or creating native platform artifacts. Read the error, correct your CLI flags based on the examples in your Skill Package, and retry the command.
+
+### Law 6: Command Structure (The Syntax)
+- **Constraint:** You must use the exact CLI flags and subcommands defined by the `castra` protocol. Do not guess or hallucinate command structures.
+- **Reference:** The valid command structures are as follows. All commands (except `init`) require the `--role <your-role>` flag.
+  - `castra project add --role <role> --name "..." --desc "..."`
+  - `castra project list --role <role>`
+  - `castra project delete --role <role> <id>`
+  - `castra milestone add --role <role> --project <id> --name "..."`
+  - `castra milestone list --role <role> --project <id>`
+  - `castra milestone update --role <role> --status <open|completed> <id>`
+  - `castra sprint add --role <role> --project <id> --name "..." [--start "..."] [--end "..."]`
+  - `castra sprint list --role <role> --project <id>`
+  - `castra task add --role <role> --project <id> --milestone <id> --sprint <id> --title "..." --desc "..." --prio <low|medium|high>`
+  - `castra task list --role <role> --project <id> [--milestone <id>] [--sprint <id>] [--backlog]`
+  - `castra task update --role <role> --status <status> <id>`
+  - `castra task delete --role <role> <id>`
+  - `castra note add --role <role> --project <id> [--task <id>] --content "..." --tags "..."`
+  - `castra note list --role <role> --project <id> [--task <id>]`
+  - `castra log add --role <role> --msg "..." [--type <entity>] [--entity <id>]`
+  - `castra log list --role <role>`
+- **Action:** If you are unsure of a command, refer to this exact list. Do not invent flags that are not documented here.
