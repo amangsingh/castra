@@ -63,7 +63,7 @@ func ListTasks(db *sql.DB, projectID int64, milestoneID, sprintID *int64, backlo
 	// 2. Engineer: todo, doing, blocked, pending
 	// 3. QA & Security: review
 	switch role {
-	case "junior-engineer", "senior-engineer":
+	case "junior-engineer", "senior-engineer", "designer":
 		query += ` AND status IN ('todo', 'doing', 'blocked', 'pending')`
 	case "qa-functional", "security-ops":
 		query += ` AND status = 'review'`
@@ -96,7 +96,8 @@ func UpdateTaskStatus(db *sql.DB, id int64, newStatus string, role string) error
 	// 1. Fetch current task state
 	var currentStatus string
 	var qaApp, secApp bool
-	err := db.QueryRow(`SELECT status, qa_approved, security_approved FROM tasks WHERE id = ?`, id).Scan(&currentStatus, &qaApp, &secApp)
+	var sprintID sql.NullInt64
+	err := db.QueryRow(`SELECT status, qa_approved, security_approved, sprint_id FROM tasks WHERE id = ?`, id).Scan(&currentStatus, &qaApp, &secApp, &sprintID)
 	if err != nil {
 		return err
 	}
@@ -105,10 +106,10 @@ func UpdateTaskStatus(db *sql.DB, id int64, newStatus string, role string) error
 	switch role {
 	case "architect":
 		// Can do anything
-	case "junior-engineer", "senior-engineer":
+	case "junior-engineer", "senior-engineer", "designer":
 		// Cannot set to 'done'
 		if newStatus == "done" {
-			return fmt.Errorf("engineer cannot mark task as done (must be approved by qa & security)")
+			return fmt.Errorf("engineer/designer cannot mark task as done (must be approved by qa & security)")
 		}
 	case "qa-functional", "security-ops":
 		// Can only pick up from 'review' and mark as 'done' (conditional)
@@ -158,6 +159,38 @@ func UpdateTaskStatus(db *sql.DB, id int64, newStatus string, role string) error
 	_, err = db.Exec(`UPDATE tasks SET status = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?`, newStatus, id)
 	if err == nil {
 		LogTaskAction(db, id, "status_change", role, fmt.Sprintf("Status changed from '%s' to '%s'", currentStatus, newStatus))
+
+		// Auto-start Sprint Logic
+		if newStatus == "doing" && sprintID.Valid {
+			var sprintStatus string
+			errSprint := db.QueryRow(`SELECT status FROM sprints WHERE id = ?`, sprintID.Int64).Scan(&sprintStatus)
+			if errSprint == nil && sprintStatus == "planning" {
+				// Update sprint to 'in progress'
+				_, errUpdate := db.Exec(`UPDATE sprints SET status = 'in progress' WHERE id = ?`, sprintID.Int64)
+				if errUpdate == nil {
+					// Log sprint status change
+					payload := fmt.Sprintf("[%s] Sprint automatically started by task %d status change", role, id)
+					_ = AddAuditEntry(db, "sprint", sprintID.Int64, "status_change", role, payload)
+					fmt.Printf("Sprint %d automatically started.\n", sprintID.Int64)
+				}
+			}
+		}
+
+		// Auto-complete Sprint Logic
+		if newStatus == "done" && sprintID.Valid {
+			var pendingCount int
+			errPending := db.QueryRow(`SELECT COUNT(*) FROM tasks WHERE sprint_id = ? AND status != 'done' AND deleted_at IS NULL`, sprintID.Int64).Scan(&pendingCount)
+			if errPending == nil && pendingCount == 0 {
+				// Update sprint to 'done'
+				_, errUpdate := db.Exec(`UPDATE sprints SET status = 'done' WHERE id = ?`, sprintID.Int64)
+				if errUpdate == nil {
+					// Log sprint status change
+					payload := fmt.Sprintf("[%s] Sprint automatically completed by task %d completion", role, id)
+					_ = AddAuditEntry(db, "sprint", sprintID.Int64, "status_change", role, payload)
+					fmt.Printf("Sprint %d automatically completed.\n", sprintID.Int64)
+				}
+			}
+		}
 	}
 	return err
 }
@@ -175,4 +208,36 @@ func MoveTaskToBacklog(db *sql.DB, id int64) error {
 func SoftDeleteTask(db *sql.DB, id int64) error {
 	_, err := db.Exec(`UPDATE tasks SET deleted_at = CURRENT_TIMESTAMP WHERE id = ?`, id)
 	return err
+}
+
+func ListAllTasksForRole(db *sql.DB, role string) ([]Task, error) {
+	query := `SELECT id, project_id, milestone_id, sprint_id, title, COALESCE(description, ''), status, priority, qa_approved, security_approved FROM tasks WHERE deleted_at IS NULL`
+	var args []interface{}
+
+	switch role {
+	case "junior-engineer", "senior-engineer", "designer":
+		query += ` AND status IN ('todo', 'doing', 'blocked', 'pending')`
+	case "qa-functional", "security-ops":
+		query += ` AND status = 'review'`
+	case "doc-writer", "architect":
+		// No filter
+	default:
+		return nil, fmt.Errorf("unknown role: %s", role)
+	}
+
+	rows, err := db.Query(query, args...)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var tasks []Task
+	for rows.Next() {
+		var t Task
+		if err := rows.Scan(&t.ID, &t.ProjectID, &t.MilestoneID, &t.SprintID, &t.Title, &t.Description, &t.Status, &t.Priority, &t.QAApproved, &t.SecurityApproved); err != nil {
+			return nil, err
+		}
+		tasks = append(tasks, t)
+	}
+	return tasks, nil
 }

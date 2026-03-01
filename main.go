@@ -18,7 +18,7 @@ func main() {
 	// We use a simple helper to extract the role before dispatching.
 	role := getRoleFromArgs()
 	if role == "" && os.Args[1] != "init" {
-		fmt.Println("Error: --role <architect|senior-engineer|junior-engineer|qa-functional|security-ops|doc-writer> is required")
+		fmt.Println("Error: --role <architect|senior-engineer|junior-engineer|designer|qa-functional|security-ops|doc-writer> is required")
 		os.Exit(1)
 	}
 
@@ -33,6 +33,10 @@ func main() {
 		commands.HandleSprint(role)
 	case "task":
 		commands.HandleTask(role)
+	case "tui":
+		commands.HandleTUI(role)
+	case "watch":
+		commands.HandleWatch(role)
 	case "note":
 		commands.HandleNote(role)
 	case "log":
@@ -46,12 +50,14 @@ func main() {
 
 func printUsage() {
 	fmt.Println("Usage: castra <command> --role <role> [subcommand] [flags]")
-	fmt.Println("\nRoles: architect, senior-engineer, junior-engineer, qa-functional, security-ops, doc-writer")
+	fmt.Println("\nRoles: architect, senior-engineer, junior-engineer, designer, qa-functional, security-ops, doc-writer")
 	fmt.Println("\nCommands:")
 	fmt.Println("  init     Initialize workspace")
 	fmt.Println("  project  Manage projects")
 	fmt.Println("  sprint   Manage sprints")
 	fmt.Println("  task     Manage tasks")
+	fmt.Println("  tui      Launch Castra TUI dashboard")
+	fmt.Println("  watch    Watch tasks state")
 	fmt.Println("  note     Manage project notes")
 	fmt.Println("  log      View and add audit log entries")
 }

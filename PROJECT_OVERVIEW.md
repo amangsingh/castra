@@ -87,6 +87,34 @@ Project context is maintained locally and persistently in `workspace.db`.
 *   **Dual-Approval Lock:** Tasks strictly require **both** QA (`qa-functional`) and Security (`security-ops`) sign-off to be completed.
 *   **Smart Filtering:** Automatic filtering of tasks based on the active role's context.
 
+## Current State of the Project
+
+**Project 1: Castra** *(Active)*
+
+### Vision & Architecture
+**Note [1]:** *Castra operates as a standalone Go binary, coordinating autonomous AI agents via a local SQLite workspace.db. The architecture comprises a CLI command dispatcher, a business logic layer enforcing Role-Based Access Control and dual-approvals, a versioned schema migration engine, and an embedded template generator for the Antigravity OS skills.*
+
+### Milestones
+1. **[1] CLI Command Dispatch** *(open)*
+2. **[2] Business Logic & Roles** *(open)*
+3. **[3] Local SQLite Store** *(open)*
+4. **[4] Antigravity Project Generator** *(open)*
+5. **[5] Track 2: The Waking Protocol (Daemon)** *(open)*
+6. **[6] Track 3: The Command Center (TUI)** *(open)*
+
+### Sprints
+- **[1] v1.2: The Core Protocol** *(planning)*
+- **[2] v1.3: Daemon & Dashboard** *(planning)*
+
+### Tasks
+- **[1] Historical: CLI Setup and Command Routing** *(done)*
+- **[2] Historical: Role-based access control and dual-approval locks in internal/cli** *(done)*
+- **[3] Historical: SQLite connection, query setup, and schema migrations in internal/db** *(done)*
+- **[4] Historical: Antigravity OS skills, templates, workflows, and generator logic** *(done)*
+- **[5] Implement Daemon Watcher Command** *(todo)*
+- **[6] Implement TUI Command and Skeleton** *(todo)*
+- **[7] TUI: Live Dashboard View** *(todo)*
+
 ## Usage
 
 ```bash

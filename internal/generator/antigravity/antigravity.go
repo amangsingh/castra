@@ -1,7 +1,6 @@
 package antigravity
 
 import (
-	"embed"
 	"fmt"
 	"io/fs"
 	"log"
@@ -9,10 +8,10 @@ import (
 	"os/exec"
 	"path/filepath"
 	"runtime"
-)
+	"strings"
 
-//go:embed templates/*
-var templatesFS embed.FS
+	"castra/internal/generator/templates"
+)
 
 func InitWorkspace(baseDir string) error {
 	// 1. Create base directories
@@ -20,6 +19,7 @@ func InitWorkspace(baseDir string) error {
 		".agent/rules",
 		".agent/skills",
 		".agent/workflows",
+		".github/agents",
 	}
 
 	for _, dir := range dirs {
@@ -28,14 +28,25 @@ func InitWorkspace(baseDir string) error {
 		}
 	}
 
-	// 2. Walk the embedded templates directory
-	err := fs.WalkDir(templatesFS, "templates", func(path string, d fs.DirEntry, err error) error {
+	// 2. Write rules.md → .agent/rules/rules.md
+	rulesContent, err := templates.FS.ReadFile("rules.md")
+	if err != nil {
+		return fmt.Errorf("failed to read rules.md: %w", err)
+	}
+	if err := os.WriteFile(filepath.Join(baseDir, ".agent/rules/rules.md"), rulesContent, 0644); err != nil {
+		return fmt.Errorf("failed to write rules.md: %w", err)
+	}
+
+	// 3. Walk roles/ → .agent/skills/<role>/
+	// Skip workflows/ subdirs (routed to .agent/workflows/ separately)
+	// Skip scripts/ subdirs (compiled separately)
+	err = fs.WalkDir(templates.FS, "roles", func(path string, d fs.DirEntry, err error) error {
 		if err != nil {
 			return err
 		}
 
-		// Calculate relative path from "templates/"
-		relPath, err := filepath.Rel("templates", path)
+		// Calculate relative path from "roles/"
+		relPath, err := filepath.Rel("roles", path)
 		if err != nil {
 			return err
 		}
@@ -44,38 +55,30 @@ func InitWorkspace(baseDir string) error {
 			return nil
 		}
 
-		// Skip workflow directories entirely — files are routed to .agent/workflows/,
-		// so creating the dir under skills/ would leave it empty.
-		if d.IsDir() && d.Name() == "workflows" {
-			return nil
-		}
-
-		// Skip scripts directories — we handle script compilation separately below.
+		// Skip scripts directories — handled separately via compilation
 		if d.IsDir() && d.Name() == "scripts" {
-			return nil
+			return fs.SkipDir
 		}
 
-		// Determine destination path
-		var destPath string
-		if relPath == "rules.md" {
-			destPath = filepath.Join(baseDir, ".agent/rules/rules.md")
-		} else if filepath.Base(filepath.Dir(relPath)) == "workflows" {
-			// Files in "workflows" subdirectory go to .agent/workflows/
-			destPath = filepath.Join(baseDir, ".agent/workflows", filepath.Base(relPath))
-		} else if filepath.Base(filepath.Dir(relPath)) == "scripts" {
-			// Skip .go source files — they'll be compiled in the post-walk step.
-			return nil
-		} else {
-			// Everything else goes to .agent/skills/
-			destPath = filepath.Join(baseDir, ".agent/skills", relPath)
+		// Skip scripts source files (reached via non-dir walk)
+		parts := strings.Split(relPath, string(filepath.Separator))
+		for _, p := range parts {
+			if p == "scripts" {
+				return nil
+			}
 		}
+
+		destPath := filepath.Join(baseDir, ".agent/skills", relPath)
 
 		if d.IsDir() {
 			if err := os.MkdirAll(destPath, 0755); err != nil {
 				return fmt.Errorf("failed to create directory %s: %w", destPath, err)
 			}
 		} else {
-			content, err := templatesFS.ReadFile(path)
+			if err := os.MkdirAll(filepath.Dir(destPath), 0755); err != nil {
+				return fmt.Errorf("failed to create parent dir for %s: %w", destPath, err)
+			}
+			content, err := templates.FS.ReadFile(path)
 			if err != nil {
 				return fmt.Errorf("failed to read template %s: %w", path, err)
 			}
@@ -86,12 +89,34 @@ func InitWorkspace(baseDir string) error {
 
 		return nil
 	})
-
 	if err != nil {
 		return err
 	}
 
-	// 3. Compile role wrapper scripts into binaries
+	// 4. Walk workflows/ → .agent/workflows/ (flat)
+	err = fs.WalkDir(templates.FS, "workflows", func(path string, d fs.DirEntry, err error) error {
+		if err != nil {
+			return err
+		}
+		if d.IsDir() {
+			return nil
+		}
+
+		content, err := templates.FS.ReadFile(path)
+		if err != nil {
+			return fmt.Errorf("failed to read workflow %s: %w", path, err)
+		}
+		destPath := filepath.Join(baseDir, ".agent/workflows", d.Name())
+		if err := os.WriteFile(destPath, content, 0644); err != nil {
+			return fmt.Errorf("failed to write workflow %s: %w", destPath, err)
+		}
+		return nil
+	})
+	if err != nil {
+		return err
+	}
+
+	// 5. Compile role wrapper scripts into binaries
 	if err := compileRoleScripts(baseDir); err != nil {
 		return err
 	}
@@ -99,13 +124,13 @@ func InitWorkspace(baseDir string) error {
 	return nil
 }
 
-// compileRoleScripts finds each role's scripts/main.go in the embedded templates,
+// compileRoleScripts finds each role's scripts/main.go in the shared templates,
 // compiles it to a binary, and places it at .agent/skills/<role>/scripts/castra.
 // Falls back to a shell script if Go is not available.
 func compileRoleScripts(baseDir string) error {
-	entries, err := templatesFS.ReadDir("templates")
+	entries, err := templates.FS.ReadDir("roles")
 	if err != nil {
-		return fmt.Errorf("failed to read templates dir: %w", err)
+		return fmt.Errorf("failed to read roles dir: %w", err)
 	}
 
 	goAvailable := isGoAvailable()
@@ -116,10 +141,10 @@ func compileRoleScripts(baseDir string) error {
 		}
 
 		role := entry.Name()
-		srcPath := fmt.Sprintf("templates/%s/scripts/main.go", role)
+		srcPath := fmt.Sprintf("roles/%s/scripts/main.go", role)
 
 		// Check if this role has a scripts/main.go
-		content, err := templatesFS.ReadFile(srcPath)
+		content, err := templates.FS.ReadFile(srcPath)
 		if err != nil {
 			continue // No script for this role
 		}
