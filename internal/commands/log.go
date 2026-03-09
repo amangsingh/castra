@@ -4,57 +4,53 @@ import (
 	"castra/internal/cli"
 	"flag"
 	"fmt"
-	"log"
-	"os"
 )
 
-func HandleLog(role string) {
-	subCmdIdx := GetSubcommandIndex()
-	if subCmdIdx == -1 {
-		fmt.Println("Usage: castra log --role <role> <add|list>")
-		return
+type LogAddCommand struct{}
+
+func (c *LogAddCommand) Name() string        { return "add" }
+func (c *LogAddCommand) Description() string { return "Add an audit log entry" }
+func (c *LogAddCommand) Usage() string {
+	return "castra log add --msg <message> [--type <type>] [--entity <id>]"
+}
+
+func (c *LogAddCommand) Execute(ctx *Context) error {
+	fs := flag.NewFlagSet("log add", flag.ExitOnError)
+	msg := fs.String("msg", "", "Log message")
+	entityType := fs.String("type", "", "Entity type (project, sprint, task)")
+	entityID := fs.Int64("entity", 0, "Entity ID")
+	fs.Parse(ctx.Args)
+
+	if *msg == "" {
+		return fmt.Errorf("message required (--msg)")
 	}
-	cmd := os.Args[subCmdIdx]
 
-	db := GetDB()
-	defer db.Close()
-	argsToParse := FilterArgs(os.Args[subCmdIdx+1:])
+	return cli.AddAuditEntry(ctx.DB, *entityType, *entityID, *msg, ctx.Role, "")
+}
 
-	switch cmd {
-	case "add":
-		fs := flag.NewFlagSet("log add", flag.ExitOnError)
-		msg := fs.String("msg", "", "Log message")
-		entityType := fs.String("type", "", "Entity type (project, sprint, task)")
-		entityID := fs.Int64("entity", 0, "Entity ID")
-		fs.Parse(argsToParse)
+type LogListCommand struct{}
 
-		if *msg == "" {
-			log.Fatal("Message required (--msg)")
-		}
+func (c *LogListCommand) Name() string        { return "list" }
+func (c *LogListCommand) Description() string { return "List audit log entries" }
+func (c *LogListCommand) Usage() string       { return "castra log list [--type <type>] [--entity <id>]" }
 
-		err := cli.AddAuditEntry(db, *entityType, *entityID, *msg, role, "")
-		if err != nil {
-			log.Fatal(err)
-		}
-		fmt.Println("Audit entry logged.")
+func (c *LogListCommand) Execute(ctx *Context) error {
+	fs := flag.NewFlagSet("log list", flag.ExitOnError)
+	entityType := fs.String("type", "", "Filter by entity type")
+	entityID := fs.Int64("entity", 0, "Filter by entity ID")
+	fs.Parse(ctx.Args)
 
-	case "list":
-		fs := flag.NewFlagSet("log list", flag.ExitOnError)
-		entityType := fs.String("type", "", "Filter by entity type")
-		entityID := fs.Int64("entity", 0, "Filter by entity ID")
-		fs.Parse(argsToParse)
-
-		var eid *int64
-		if *entityID != 0 {
-			eid = entityID
-		}
-
-		entries, err := cli.ListAuditEntries(db, *entityType, eid)
-		if err != nil {
-			log.Fatal(err)
-		}
-		for _, e := range entries {
-			fmt.Printf("[%s] %s/%d: %s (%s)\n", e.Timestamp, e.EntityType, e.EntityID, e.Action, e.Role)
-		}
+	var eid *int64
+	if *entityID != 0 {
+		eid = entityID
 	}
+
+	entries, err := cli.ListAuditEntries(ctx.DB, *entityType, eid)
+	if err != nil {
+		return err
+	}
+	for _, e := range entries {
+		fmt.Printf("[%s] %s/%d: %s (%s)\n", e.Timestamp, e.EntityType, e.EntityID, e.Action, e.Role)
+	}
+	return nil
 }

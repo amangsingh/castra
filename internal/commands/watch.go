@@ -8,14 +8,17 @@ import (
 	"time"
 )
 
-func HandleWatch(role string) {
-	db := GetDB()
-	defer db.Close()
+type WatchCommand struct{}
 
+func (c *WatchCommand) Name() string        { return "watch" }
+func (c *WatchCommand) Description() string { return "Watch tasks state" }
+func (c *WatchCommand) Usage() string       { return "castra watch" }
+
+func (c *WatchCommand) Execute(ctx *Context) error {
 	var lastState string
 
 	for {
-		tasks, err := cli.ListAllTasksForRole(db, role)
+		tasks, err := cli.ListAllTasksForRole(ctx.DB, ctx.Role)
 		if err != nil {
 			log.Println("Error querying tasks:", err)
 			time.Sleep(2 * time.Second)

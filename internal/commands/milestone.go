@@ -4,89 +4,107 @@ import (
 	"castra/internal/cli"
 	"flag"
 	"fmt"
-	"log"
-	"os"
 	"strconv"
 )
 
-func HandleMilestone(role string) {
-	subCmdIdx := GetSubcommandIndex()
-	if subCmdIdx == -1 {
-		fmt.Println("Usage: castra milestone --role <role> <add|list|update|delete> ...")
-		return
+type MilestoneAddCommand struct{}
+
+func (c *MilestoneAddCommand) Name() string        { return "add" }
+func (c *MilestoneAddCommand) Description() string { return "Add a new milestone" }
+func (c *MilestoneAddCommand) Usage() string {
+	return "castra milestone add --project <pid> --name <name>"
+}
+
+func (c *MilestoneAddCommand) Execute(ctx *Context) error {
+	if ctx.Role != "architect" {
+		return fmt.Errorf("only architect can manage milestones")
 	}
-	cmd := os.Args[subCmdIdx]
 
-	if role != "architect" && cmd != "list" {
-		log.Fatal("Only architect can manage milestones")
+	fs := flag.NewFlagSet("milestone add", flag.ExitOnError)
+	pid := fs.Int64("project", 0, "Project ID")
+	name := fs.String("name", "", "Milestone Name")
+	fs.Parse(ctx.Args)
+
+	if *pid == 0 || *name == "" {
+		return fmt.Errorf("project ID and name required")
+	}
+	id, err := cli.AddMilestone(ctx.DB, *pid, *name)
+	if err != nil {
+		return err
+	}
+	fmt.Printf("Milestone added: %d\n", id)
+	return nil
+}
+
+type MilestoneListCommand struct{}
+
+func (c *MilestoneListCommand) Name() string        { return "list" }
+func (c *MilestoneListCommand) Description() string { return "List milestones for a project" }
+func (c *MilestoneListCommand) Usage() string       { return "castra milestone list --project <pid>" }
+
+func (c *MilestoneListCommand) Execute(ctx *Context) error {
+	fs := flag.NewFlagSet("milestone list", flag.ExitOnError)
+	pid := fs.Int64("project", 0, "Project ID")
+	fs.Parse(ctx.Args)
+
+	if *pid == 0 {
+		return fmt.Errorf("project ID required")
+	}
+	milestones, err := cli.ListMilestones(ctx.DB, *pid, ctx.Role)
+	if err != nil {
+		return err
+	}
+	for _, m := range milestones {
+		fmt.Printf("[%d] %s (%s)\n", m.ID, m.Name, m.Status)
+	}
+	return nil
+}
+
+type MilestoneUpdateCommand struct{}
+
+func (c *MilestoneUpdateCommand) Name() string        { return "update" }
+func (c *MilestoneUpdateCommand) Description() string { return "Update milestone status" }
+func (c *MilestoneUpdateCommand) Usage() string {
+	return "castra milestone update --status <open|completed> <id>"
+}
+
+func (c *MilestoneUpdateCommand) Execute(ctx *Context) error {
+	if ctx.Role != "architect" {
+		return fmt.Errorf("only architect can manage milestones")
 	}
 
-	db := GetDB()
-	defer db.Close()
-	argsToParse := FilterArgs(os.Args[subCmdIdx+1:])
+	fs := flag.NewFlagSet("milestone update", flag.ExitOnError)
+	status := fs.String("status", "", "New Status (open|completed)")
+	fs.Parse(ctx.Args)
 
-	switch cmd {
-	case "add":
-		fs := flag.NewFlagSet("milestone add", flag.ExitOnError)
-		pid := fs.Int64("project", 0, "Project ID")
-		name := fs.String("name", "", "Milestone Name")
-		fs.Parse(argsToParse)
-		if *pid == 0 || *name == "" {
-			log.Fatal("Project ID and Name required")
-		}
-		id, err := cli.AddMilestone(db, *pid, *name)
-		if err != nil {
-			log.Fatal(err)
-		}
-		fmt.Printf("Milestone added: %d\n", id)
-
-	case "list":
-		fs := flag.NewFlagSet("milestone list", flag.ExitOnError)
-		pid := fs.Int64("project", 0, "Project ID")
-		fs.Parse(argsToParse)
-
-		if *pid == 0 {
-			log.Fatal("Project ID required")
-		}
-		milestones, err := cli.ListMilestones(db, *pid, role)
-		if err != nil {
-			log.Fatal(err)
-		}
-		for _, m := range milestones {
-			fmt.Printf("[%d] %s (%s)\n", m.ID, m.Name, m.Status)
-		}
-
-	case "update":
-		fs := flag.NewFlagSet("milestone update", flag.ExitOnError)
-		status := fs.String("status", "", "New Status (open|completed)")
-		fs.Parse(argsToParse)
-
-		idParsed := fs.Args()
-		if len(idParsed) < 1 {
-			log.Fatal("ID required")
-		}
-		id, _ := strconv.ParseInt(idParsed[0], 10, 64)
-
-		if *status == "" {
-			log.Fatal("Status required")
-		}
-		if err := cli.UpdateMilestoneStatus(db, id, *status, role); err != nil {
-			log.Fatal(err)
-		}
-		fmt.Println("Milestone status updated.")
-
-	case "delete":
-		fs := flag.NewFlagSet("milestone delete", flag.ExitOnError)
-		fs.Parse(argsToParse)
-
-		idParsed := fs.Args()
-		if len(idParsed) < 1 {
-			log.Fatal("ID required")
-		}
-		id, _ := strconv.ParseInt(idParsed[0], 10, 64)
-		if err := cli.SoftDeleteMilestone(db, id); err != nil {
-			log.Fatal(err)
-		}
-		fmt.Println("Milestone deleted.")
+	if len(fs.Args()) < 1 {
+		return fmt.Errorf("ID required")
 	}
+	id, _ := strconv.ParseInt(fs.Args()[0], 10, 64)
+
+	if *status == "" {
+		return fmt.Errorf("status required")
+	}
+	return cli.UpdateMilestoneStatus(ctx.DB, id, *status, ctx.Role)
+}
+
+type MilestoneDeleteCommand struct{}
+
+func (c *MilestoneDeleteCommand) Name() string        { return "delete" }
+func (c *MilestoneDeleteCommand) Description() string { return "Delete a milestone (soft delete)" }
+func (c *MilestoneDeleteCommand) Usage() string       { return "castra milestone delete <id>" }
+
+func (c *MilestoneDeleteCommand) Execute(ctx *Context) error {
+	if ctx.Role != "architect" {
+		return fmt.Errorf("only architect can manage milestones")
+	}
+
+	fs := flag.NewFlagSet("milestone delete", flag.ExitOnError)
+	fs.Parse(ctx.Args)
+
+	if len(fs.Args()) < 1 {
+		return fmt.Errorf("ID required")
+	}
+	id, _ := strconv.ParseInt(fs.Args()[0], 10, 64)
+	return cli.SoftDeleteMilestone(ctx.DB, id)
 }

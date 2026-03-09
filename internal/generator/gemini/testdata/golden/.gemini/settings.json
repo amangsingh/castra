@@ -1,0 +1,4 @@
+{
+  "project.features.enableAssistant": true,
+  "project.features.customInstructions": true
+}

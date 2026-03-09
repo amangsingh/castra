@@ -107,92 +107,33 @@ func UpdateTaskStatus(db *sql.DB, id int64, newStatus string, role string) error
 	case "architect":
 		// Can do anything
 	case "junior-engineer", "senior-engineer", "designer":
-		// Cannot set to 'done'
 		if newStatus == "done" {
 			return fmt.Errorf("engineer/designer cannot mark task as done (must be approved by qa & security)")
-		}
-	case "qa-functional", "security-ops":
-		// Can only pick up from 'review' and mark as 'done' (conditional)
-		if currentStatus != "review" {
-			return fmt.Errorf("%s can only process tasks in 'review' status", role)
-		}
-
-		if newStatus == "todo" {
-			// Rejection: reset BOTH approval flags to force fresh verification
-			_, err := db.Exec(`UPDATE tasks SET qa_approved = false, security_approved = false, status = 'todo', updated_at = CURRENT_TIMESTAMP WHERE id = ?`, id)
-			if err != nil {
-				return err
-			}
-			LogTaskAction(db, id, "rejected", role, "Task rejected from review to todo. All approvals reset.")
-			fmt.Printf("Task rejected by %s. All approvals reset. Task returned to todo.\n", role)
-			return nil
-		}
-
-		if newStatus == "done" {
-			// Register Approval
-			if role == "qa-functional" {
-				qaApp = true
-			}
-			if role == "security-ops" {
-				secApp = true
-			}
-
-			// Update Approval Flags
-			_, err := db.Exec(`UPDATE tasks SET qa_approved = ?, security_approved = ? WHERE id = ?`, qaApp, secApp, id)
-			if err != nil {
-				return err
-			}
-
-			// Check Lock: Both must be true to transition to DONE
-			if !qaApp || !secApp {
-				LogTaskAction(db, id, "approved", role, "Approval granted. Waiting for other gate.")
-				fmt.Printf("Task approved by %s. Waiting for other approval to mark DONE.\n", role)
-				return nil // Not an error, just didn't transition status yet
-			}
-			LogTaskAction(db, id, "approved", role, "Final approval granted. Both gates passed.")
-			// Fallthrough to update status to done
 		}
 	case "doc-writer":
 		return fmt.Errorf("doc-writer cannot update tasks")
 	}
 
-	_, err = db.Exec(`UPDATE tasks SET status = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?`, newStatus, id)
-	if err == nil {
-		LogTaskAction(db, id, "status_change", role, fmt.Sprintf("Status changed from '%s' to '%s'", currentStatus, newStatus))
-
-		// Auto-start Sprint Logic
-		if newStatus == "doing" && sprintID.Valid {
-			var sprintStatus string
-			errSprint := db.QueryRow(`SELECT status FROM sprints WHERE id = ?`, sprintID.Int64).Scan(&sprintStatus)
-			if errSprint == nil && sprintStatus == "planning" {
-				// Update sprint to 'in progress'
-				_, errUpdate := db.Exec(`UPDATE sprints SET status = 'in progress' WHERE id = ?`, sprintID.Int64)
-				if errUpdate == nil {
-					// Log sprint status change
-					payload := fmt.Sprintf("[%s] Sprint automatically started by task %d status change", role, id)
-					_ = AddAuditEntry(db, "sprint", sprintID.Int64, "status_change", role, payload)
-					fmt.Printf("Sprint %d automatically started.\n", sprintID.Int64)
-				}
-			}
-		}
-
-		// Auto-complete Sprint Logic
-		if newStatus == "done" && sprintID.Valid {
-			var pendingCount int
-			errPending := db.QueryRow(`SELECT COUNT(*) FROM tasks WHERE sprint_id = ? AND status != 'done' AND deleted_at IS NULL`, sprintID.Int64).Scan(&pendingCount)
-			if errPending == nil && pendingCount == 0 {
-				// Update sprint to 'done'
-				_, errUpdate := db.Exec(`UPDATE sprints SET status = 'done' WHERE id = ?`, sprintID.Int64)
-				if errUpdate == nil {
-					// Log sprint status change
-					payload := fmt.Sprintf("[%s] Sprint automatically completed by task %d completion", role, id)
-					_ = AddAuditEntry(db, "sprint", sprintID.Int64, "status_change", role, payload)
-					fmt.Printf("Sprint %d automatically completed.\n", sprintID.Int64)
-				}
-			}
-		}
+	// 3. Handle Approval Logic (Gates)
+	targetStatus, proceed, err := handleTaskApprovals(db, id, currentStatus, newStatus, role, qaApp, secApp)
+	if err != nil {
+		return err
 	}
-	return err
+	if !proceed {
+		return nil
+	}
+
+	// 4. Update status if allowed
+	_, err = db.Exec(`UPDATE tasks SET status = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?`, targetStatus, id)
+	if err != nil {
+		return err
+	}
+
+	// 5. Finalize action
+	LogTaskAction(db, id, "status_change", role, fmt.Sprintf("Status changed from '%s' to '%s'", currentStatus, targetStatus))
+	handleSprintAutomation(db, id, targetStatus, role, sprintID)
+
+	return nil
 }
 
 func MoveTaskToSprint(db *sql.DB, id int64, sprintID int64) error {

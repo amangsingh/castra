@@ -194,3 +194,39 @@ func TestUpdateTaskStatus_RejectionResetsApprovals(t *testing.T) {
 		t.Error("Security approval should be reset after rejection")
 	}
 }
+func TestUpdateTaskStatus_SprintAutomation(t *testing.T) {
+	db := setupTestDB(t)
+	defer db.Close()
+
+	// 1. Setup Project and Sprint
+	res, _ := db.Exec(`INSERT INTO projects (name) VALUES ('Test Project')`)
+	pid, _ := res.LastInsertId()
+	res, _ = db.Exec(`INSERT INTO sprints (project_id, name, status) VALUES (?, 'Test Sprint', 'planning')`, pid)
+	sid, _ := res.LastInsertId()
+
+	// 2. Setup Task
+	res, _ = db.Exec(`INSERT INTO tasks (title, project_id, sprint_id, status) VALUES ('Task 1', ?, ?, 'todo')`, pid, sid)
+	tid, _ := res.LastInsertId()
+
+	// 3. Move to 'doing' -> Sprint should auto-start
+	err := UpdateTaskStatus(db, tid, "doing", "senior-engineer")
+	if err != nil {
+		t.Fatalf("UpdateTaskStatus failed: %v", err)
+	}
+
+	var sprintStatus string
+	db.QueryRow("SELECT status FROM sprints WHERE id = ?", sid).Scan(&sprintStatus)
+	if sprintStatus != "in progress" {
+		t.Errorf("Sprint should be 'in progress', got %s", sprintStatus)
+	}
+
+	// 4. Move to 'review' -> 'done' (bypass gates for simplicity with architect)
+	UpdateTaskStatus(db, tid, "review", "architect")
+	UpdateTaskStatus(db, tid, "done", "architect")
+
+	// 5. Verify sprint auto-complete
+	db.QueryRow("SELECT status FROM sprints WHERE id = ?", sid).Scan(&sprintStatus)
+	if sprintStatus != "done" {
+		t.Errorf("Sprint should be 'done', got %s", sprintStatus)
+	}
+}

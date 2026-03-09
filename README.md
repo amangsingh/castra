@@ -13,6 +13,7 @@ For a comprehensive technical deep-dive, see [CASTRA_OVERVIEW.md](CASTRA_OVERVIE
 *   **Zero-Config:** Runs entirely locally. No servers, no clouds, no accounts. Single standalone binary.
 *   **Role-Based Access Control (RBAC):** Enforces separation of concerns via the `--role` flag.
     *   **Architect (`architect`):** The planner (God mode).
+    *   **Designer (`designer`):** The Visual Architect (UI mockups & user flows).
     *   **Senior Engineer (`senior-engineer`):** The builder (Complex problems).
     *   **Junior Engineer (`junior-engineer`):** The maintainer (Bug fixes, tweaks).
     *   **Functional QA (`qa-functional`):** The verifier (Review gatekeeper).
@@ -24,7 +25,10 @@ For a comprehensive technical deep-dive, see [CASTRA_OVERVIEW.md](CASTRA_OVERVIE
 *   **Versioned Schema Migrations:** Automatic database schema evolution with backward compatibility for pre-migration databases.
 *   **Workflow System:** Step-by-step operational protocols for every role, generated into `.agent/workflows/` on init.
 *   **The Universal Constitution:** The Three Gates of Conformance — a constraint architecture that eliminates LLM compliance drift.
-*   **Platform Extensibility:** Generator abstraction layer ready for `--copilot`, `--gemini-cli`, and more.
+*   **Terminal User Interface (TUI):** Includes a live dashboard view (`castra tui`) for seamless project state monitoring, alongside a headless daemon watcher (`castra watch`).
+*   **Sprint Automation:** Sprints intelligently auto-start when work begins and auto-complete when all tasks are approved.
+*   **Session Identity Enforcement:** Real-time systemic checks to prevent agent persona drift.
+*   **Platform Extensibility:** Generator abstraction layer with out-of-the-box support for DeepMind Antigravity (`--antigravity`), GitHub Copilot (`--copilot`), and Gemini Code Assist (`--gemini`).
 
 ## Installation
 
@@ -114,6 +118,7 @@ castra log add --role architect --msg "Completed Sprint 1 planning"
 | Role | Flag | Power | Prohibition |
 |------|------|-------|-------------|
 | **Architect** | `--role architect` | God mode. Manages everything. | Cannot write code. |
+| **Designer** | `--role designer` | Visualizes intent into UI and application flow mockups. | Cannot write production code. |
 | **Senior Engineer** | `--role senior-engineer` | Complex problem solving. | Cannot mark `done`. |
 | **Junior Engineer** | `--role junior-engineer` | Bug fixes, tweaks. | Cannot mark `done`. Cannot architect. |
 | **Functional QA** | `--role qa-functional` | First key to `done`. | Cannot read source code. |

@@ -10,6 +10,7 @@ import (
 	"runtime"
 	"strings"
 
+	"castra/internal/generator/common"
 	"castra/internal/generator/templates"
 )
 
@@ -21,96 +22,52 @@ func InitWorkspace(baseDir string) error {
 		".agent/workflows",
 		".github/agents",
 	}
-
-	for _, dir := range dirs {
-		if err := os.MkdirAll(filepath.Join(baseDir, dir), 0755); err != nil {
-			return fmt.Errorf("failed to create directory %s: %w", dir, err)
-		}
+	if err := common.EnsureDirs(baseDir, dirs); err != nil {
+		return err
 	}
 
 	// 2. Write rules.md → .agent/rules/rules.md
-	rulesContent, err := templates.FS.ReadFile("rules.md")
-	if err != nil {
-		return fmt.Errorf("failed to read rules.md: %w", err)
-	}
-	if err := os.WriteFile(filepath.Join(baseDir, ".agent/rules/rules.md"), rulesContent, 0644); err != nil {
-		return fmt.Errorf("failed to write rules.md: %w", err)
+	if err := common.WriteTemplateFile(templates.FS, "rules.md", filepath.Join(baseDir, ".agent/rules/rules.md")); err != nil {
+		return err
 	}
 
 	// 3. Walk roles/ → .agent/skills/<role>/
-	// Skip workflows/ subdirs (routed to .agent/workflows/ separately)
-	// Skip scripts/ subdirs (compiled separately)
-	err = fs.WalkDir(templates.FS, "roles", func(path string, d fs.DirEntry, err error) error {
-		if err != nil {
-			return err
-		}
-
+	err := common.WalkAndMap(templates.FS, "roles", filepath.Join(baseDir, ".agent/skills"), func(path string, d fs.DirEntry) (string, bool, error) {
 		// Calculate relative path from "roles/"
 		relPath, err := filepath.Rel("roles", path)
 		if err != nil {
-			return err
+			return "", false, err
 		}
 
 		if relPath == "." {
-			return nil
+			return "", false, nil
 		}
 
 		// Skip scripts directories — handled separately via compilation
 		if d.IsDir() && d.Name() == "scripts" {
-			return fs.SkipDir
+			return "", true, nil
 		}
 
 		// Skip scripts source files (reached via non-dir walk)
 		parts := strings.Split(relPath, string(filepath.Separator))
 		for _, p := range parts {
 			if p == "scripts" {
-				return nil
+				return "", true, nil
 			}
 		}
 
-		destPath := filepath.Join(baseDir, ".agent/skills", relPath)
-
-		if d.IsDir() {
-			if err := os.MkdirAll(destPath, 0755); err != nil {
-				return fmt.Errorf("failed to create directory %s: %w", destPath, err)
-			}
-		} else {
-			if err := os.MkdirAll(filepath.Dir(destPath), 0755); err != nil {
-				return fmt.Errorf("failed to create parent dir for %s: %w", destPath, err)
-			}
-			content, err := templates.FS.ReadFile(path)
-			if err != nil {
-				return fmt.Errorf("failed to read template %s: %w", path, err)
-			}
-			if err := os.WriteFile(destPath, content, 0644); err != nil {
-				return fmt.Errorf("failed to write file %s: %w", destPath, err)
-			}
-		}
-
-		return nil
+		return relPath, false, nil
 	})
 	if err != nil {
 		return err
 	}
 
 	// 4. Walk workflows/ → .agent/workflows/ (flat)
-	err = fs.WalkDir(templates.FS, "workflows", func(path string, d fs.DirEntry, err error) error {
-		if err != nil {
-			return err
-		}
+	err = common.WalkAndMap(templates.FS, "workflows", filepath.Join(baseDir, ".agent/workflows"), func(path string, d fs.DirEntry) (string, bool, error) {
 		if d.IsDir() {
-			return nil
+			return "", false, nil
 		}
-
-		content, err := templates.FS.ReadFile(path)
-		if err != nil {
-			return fmt.Errorf("failed to read workflow %s: %w", path, err)
-		}
-		destPath := filepath.Join(baseDir, ".agent/workflows", d.Name())
-		if err := os.WriteFile(destPath, content, 0644); err != nil {
-			return fmt.Errorf("failed to write workflow %s: %w", destPath, err)
-		}
-		return nil
+		return d.Name(), false, nil
 	})
 	if err != nil {
 		return err

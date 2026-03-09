@@ -1,5 +1,22 @@
 # Changelog
 
+## v1.4.0 (2026-03-10)
+
+### Added
+- **Terminal UI (TUI) & Daemon Watcher**: Integrated a live dashboard view (`castra tui`) and headless background monitoring (`castra watch`).
+- **New AI Generators**: Added support for Copilot (`--copilot`) and Gemini Code Assist (`--gemini`) project scaffolding.
+- **Designer Persona**: Introduced the `designer` role for UI/UX mocks and integrated it across CLI roles and platform generators.
+- **Sprint Automation**: Sprints automatically start when the first task is picked up and auto-complete when all tasks are done.
+- **Session Identity Enforcement**: Systemic checks enforce role boundaries to prevent agent persona drift.
+- **Test Coverage Setup**: Added Golden File framework testing for generators and comprehensive unit testing for command router and CLI logic.
+
+### Changed
+- **CLI Architecture Refactor**: Separated business logic from the CLI CRUD layer by introducing a Command Router Interface.
+- **Central Shared Templates Package**: Consolidated templates and workflows to dry up generation code, adding YAML frontmatter and removing legacy directories.
+
+### Fixed
+- **Database Stability**: Resolved SQLite 'out of memory (14)' errors within Antigravity Sandbox isolation.
+
 ## v1.2.2 (2026-02-25)
 
 ### Added

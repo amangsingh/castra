@@ -3,8 +3,6 @@ package commands
 import (
 	"castra/internal/cli"
 	"fmt"
-	"log"
-	"os"
 	"strings"
 	"time"
 
@@ -175,13 +173,20 @@ func (m model) View() string {
 	return sb.String()
 }
 
-func HandleTUI(role string) {
-	if role == "" {
-		log.Fatal("Role is required for TUI.")
+type TUICommand struct{}
+
+func (c *TUICommand) Name() string        { return "tui" }
+func (c *TUICommand) Description() string { return "Launch Castra TUI dashboard" }
+func (c *TUICommand) Usage() string       { return "castra tui" }
+
+func (c *TUICommand) Execute(ctx *Context) error {
+	if ctx.Role == "" {
+		return fmt.Errorf("role is required for TUI")
 	}
-	p := tea.NewProgram(initialModel(role), tea.WithAltScreen())
+
+	p := tea.NewProgram(initialModel(ctx.Role), tea.WithAltScreen())
 	if _, err := p.Run(); err != nil {
-		log.Printf("Alas, there's been an error: %v", err)
-		os.Exit(1)
+		return fmt.Errorf("alas, there's been an error: %v", err)
 	}
+	return nil
 }
