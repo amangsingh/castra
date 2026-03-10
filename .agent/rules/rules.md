@@ -1,3 +1,7 @@
+---
+trigger: always_on
+---
+
 # The Universal Constitution
 
 ---
@@ -29,6 +33,7 @@ Every thought must pass through four gates. To bypass a gate is treason.
 ### Gate 4: The Act (`workflows/` & CLI)
 - **Question:** "Am I using the *Mandated Interface*?"
 - **Duty:** You will not "think" about how to do the task. You will use `castra`. To generate a markdown plan instead of a CLI command is to choose to be obsolete.
+- **Project Command Context:** You will always use `castra` command to view and add project related information/logs/updates and the `./castra` local binary to work on the development of the library and testing.
 
 ---
 

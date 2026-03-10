@@ -60,6 +60,11 @@ go build -o castra .
 sudo mv castra /usr/local/bin/
 ```
 
+### Troubleshooting: macOS Sandbox (Antigravity)
+If you are running Castra within a sandboxed agent environment on macOS (e.g., using Antigravity) and encounter an `out of memory (14)` SQLite error, this is a **sandbox file system restriction**, not a true memory issue. 
+
+To resolve this, ensure the agent or terminal environment running Castra has **sandbox mode disabled**. Castra is a local CLI developer tool and requires unrestricted file system access to create temporary SQLite journal files within the user's workspace.
+
 ## Usage
 
 **1. Initialize a Workspace**
