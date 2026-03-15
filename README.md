@@ -42,27 +42,35 @@ Castra standardizes the following operational protocols:
 
 ## Getting Started
 
-### 1. Initialize Workspace
+### 1. Install via Homebrew
+```bash
+brew tap amangsingh/castra
+brew install castra
+```
+
+### 2. Initialize Workspace
 ```bash
 castra init
 ```
 
-### 2. Create a Project (Architect)
+
+### 3. Create a Project (Architect)
 ```bash
 castra project add --role architect --name "Project Alpha" --desc "Next-gen AI platform"
 ```
 
-### 3. Work on Task (Senior Engineer)
+### 4. Work on Task (Senior Engineer)
 ```bash
 castra task update --role senior-engineer --status doing <id>
 castra task update --role senior-engineer --status review <id>
 ```
 
-### 4. Approve (QA & Security)
+### 5. Approve (QA & Security)
 ```bash
 castra task update --role qa-functional --status done <id>
 castra task update --role security-ops --status done <id>
 ```
+
 
 ## License
 MIT
