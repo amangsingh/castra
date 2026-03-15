@@ -1,0 +1,43 @@
+# castra.yaml — Workspace Configuration
+#
+# This file declares your agent workspace. Run 'castra init' after configuring.
+#
+# Available roles:
+#   architect, designer, doc-writer, junior-engineer,
+#   qa-functional, security-ops, senior-engineer
+
+# Antigravity (Advanced Agentic Coding Environment)
+antigravity:
+  roles:
+    - architect
+    - senior-engineer
+    - junior-engineer
+    - qa-functional
+    - security-ops
+    - doc-writer
+    - designer
+
+claude:
+  roles:
+    - architect
+    - senior-engineer
+    - designer
+    - security-ops
+
+# Claude (Anthropic's Project Environment)
+# claude:
+#   roles:
+#     - architect
+#     - senior-engineer
+
+# Copilot (GitHub Copilot Agent Environment)
+# copilot:
+#   roles:
+#     - architect
+#     - senior-engineer
+
+# Gemini (Google Code Assist Environment)
+# gemini:
+#   roles:
+#     - architect
+#     - senior-engineer
