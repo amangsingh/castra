@@ -12,6 +12,7 @@ castra.exe
 *.log
 tmp/
 dist/
+workspace.db*
 
 # OS
 .DS_Store
