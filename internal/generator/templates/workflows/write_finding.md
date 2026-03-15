@@ -1,40 +1,23 @@
 ---
-description: Phase 2 - The Finding Protocol (Security Vulnerability Report)
+description: The Security Ops agent's subroutine for writing a detailed, formal vulnerability finding.
 ---
 
-# Phase 2: The Finding Protocol (Security Vulnerability Report)
+### Doctrine: The Scribe of Weakness
 
-**Trigger:** A task has failed the security audit during the Audit Loop.
-**Goal:** To provide a structured, actionable security finding so the engineer can remediate the vulnerability.
+When you find a vulnerability, you become an auditor. Your purpose is to create a formal finding that allows the engineer to understand the weakness, its potential impact, and how to mitigate it.
 
-## Step 2.1: Document the Finding
-**Action:** Before rejecting the task, write a note attached to the specific task. A rejection without a finding report is negligent — you are the last line of defense.
+1.  **The Law of the CVE:** Your finding MUST identify the specific type of vulnerability (e.g., "SQL Injection," "Cross-Site Scripting"). Reference a CWE or CVE if possible.
+2.  **The Law of the Attack Vector:** Your finding MUST describe the specific location of the vulnerability in the code (file and line number) and the method used to exploit it.
+3.  **The Law of Mitigation:** Your finding MUST include a clear recommendation for how to fix the vulnerability.
 
-**The note MUST contain:**
-1. **Vulnerability Class:** The category (e.g., SQL Injection, XSS, Insecure Deserialization, Secret Leak).
-2. **Severity:** Critical / High / Medium / Low (use CVSS-like reasoning).
-3. **Location:** The file and function where the vulnerability exists.
-4. **Description:** What the vulnerability is and how it can be exploited.
-5. **Remediation:** A specific, actionable fix recommendation.
+### Sequence: The Finding Protocol
 
-**Command:**
-```bash
-go run main.go note add --project <ProjectID> --task <TaskID> --content "SECURITY FINDING: [Class]: SQL Injection. [Severity]: Critical. [Location]: handlers/login.go:42 handleLogin(). [Description]: User input concatenated directly into SQL query without parameterization. [Remediation]: Use parameterized queries via db.Query with ? placeholders." --tags "security,vulnerability,critical"
-```
+1.  **Log the Vulnerability Finding**
+    *   `castra note add --role security-ops --project "%%project_id%%" --task "%%task_id%%" --content "%%vulnerability_finding%%" --tags "finding,security,vulnerability"`
 
-## Step 2.2: Reject the Task
-**Action:** Reject the task. The status change to `todo` automatically resets both approval flags, forcing a complete re-review cycle after the fix.
-**Command:**
-```bash
-go run main.go task update --status todo <TaskID>
-```
+### Variables
 
-## Step 2.3: Log to Audit Trail
-**Action:** Security findings are significant events. Ensure the audit log captures the rejection.
-**Command:**
-```bash
-go run main.go log add --entity task --entity-id <TaskID> --action "security_rejection" --payload "Rejected: <Vulnerability Class>. Severity: <Severity>."
-```
+*   `%%project_id%%`: **[Input]** The ID of the project.
+*   `%%task_id%%`: **[Input]** The ID of the compromised task.
+*   `%%vulnerability_finding%%`: **[Input]** A structured markdown block containing: 1. Vulnerability Type (CWE), 2. Location/Attack Vector, 3. Recommended Mitigation.
 
-## Step 2.4: Move On
-**Action:** Return to the Audit Loop. The engineer will remediate and resubmit. You will verify the fix in the next cycle.

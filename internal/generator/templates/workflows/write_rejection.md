@@ -1,32 +1,23 @@
 ---
-description: Phase 2 - The Rejection Protocol (Actionable Feedback)
+description: The QA agent's subroutine for writing a detailed, actionable functional rejection report.
 ---
 
-# Phase 2: The Rejection Protocol (Actionable Feedback)
+### Doctrine: The Scribe of Failure
 
-**Trigger:** A task has failed functional verification during the Review Loop.
-**Goal:** To provide the engineer with a clear, actionable rejection note so the defect can be fixed on the first attempt.
+When you reject a task, you become a teacher. A simple "it's broken" is useless. Your purpose is to create a perfect bug report that allows the engineer to understand and replicate the failure with zero ambiguity.
 
-## Step 2.1: Document the Failure
-**Action:** Before rejecting the task, write a note attached to the specific task. A rejection without a note is a cardinal sin — the engineer cannot fix what they cannot understand.
+1.  **The Law of Replication:** Your report MUST contain a step-by-step list of actions to reliably reproduce the bug.
+2.  **The Law of Evidence:** Your report MUST state the "Expected Behavior" (from the task contract) and the "Actual Behavior" (what you observed).
+3.  **The Law of Precision:** Be specific. "The page crashed" is a bad report. "Entering 'abc' into the email field on the login page causes a 500 internal server error" is a good report.
 
-**The note MUST contain:**
-1. **What was expected:** The behavior specified in the task description.
-2. **What actually happened:** The observed incorrect behavior.
-3. **Steps to reproduce:** A concise, numbered list.
-4. **Severity:** Critical (blocks usage), Major (feature broken), Minor (cosmetic/edge case).
+### Sequence: The Rejection Protocol
 
-**Command:**
-```bash
-go run main.go note add --project <ProjectID> --task <TaskID> --content "REJECTION: [Expected]: Login with empty password shows error. [Actual]: Application crashes. [Steps]: 1. Open login. 2. Leave password blank. 3. Click submit. [Severity]: Critical." --tags "qa,rejection"
-```
+1.  **Log the Failure Report**
+    *   `castra note add --role qa-functional --project "%%project_id%%" --task "%%task_id%%" --content "%%rejection_report%%" --tags "rejection,qa,bug-report"`
 
-## Step 2.2: Reject the Task
-**Action:** Now reject. The status change to `todo` will automatically reset both `qa_approved` and `security_approved` flags, forcing a complete re-review cycle.
-**Command:**
-```bash
-go run main.go task update --status todo <TaskID>
-```
+### Variables
 
-## Step 2.3: Move On
-**Action:** Do not dwell on the rejection. Return to the Review Loop and continue processing the queue. The engineer will address the failure in their own time.
+*   `%%project_id%%`: **[Input]** The ID of the project.
+*   `%%task_id%%`: **[Input]** The ID of the failed task.
+*   `%%rejection_report%%`: **[Input]** A structured markdown block containing: 1. Steps to Reproduce, 2. Expected Behavior, 3. Actual Behavior.
+

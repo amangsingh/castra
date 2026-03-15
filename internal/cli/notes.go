@@ -24,7 +24,7 @@ func AddNote(db *sql.DB, projectID int64, taskID *int64, content, tags string) (
 
 func ListNotes(db *sql.DB, projectID int64, taskID *int64, role string) ([]Note, error) {
 	// Build base query
-	query := `SELECT id, project_id, task_id, content, tags FROM project_notes WHERE project_id = ? AND deleted_at IS NULL`
+	query := `SELECT id, project_id, task_id, COALESCE(content, ''), COALESCE(tags, '') FROM project_notes WHERE project_id = ? AND deleted_at IS NULL`
 	args := []interface{}{projectID}
 
 	// Filter by task if provided
@@ -40,7 +40,8 @@ func ListNotes(db *sql.DB, projectID int64, taskID *int64, role string) ([]Note,
 		return queryNotes(db, query, args...)
 	}
 
-	// Others see only notes tagged for their role
+	// Others see notes that are either untagged (public) OR tagged for their role.
+	// Notes exclusively tagged for a different specific role are hidden.
 	allNotes, err := queryNotes(db, query, args...)
 	if err != nil {
 		return nil, err
@@ -48,7 +49,7 @@ func ListNotes(db *sql.DB, projectID int64, taskID *int64, role string) ([]Note,
 
 	var filtered []Note
 	for _, n := range allNotes {
-		if containsRole(n.Tags, role) {
+		if isVisibleToRole(n.Tags, role) {
 			filtered = append(filtered, n)
 		}
 	}
@@ -73,13 +74,36 @@ func queryNotes(db *sql.DB, query string, args ...interface{}) ([]Note, error) {
 	return notes, nil
 }
 
-func containsRole(tags, role string) bool {
-	// Simple tag check: "engineer,frontend" contains "engineer"
+// knownRoles is the set of role tags that make a note role-specific.
+var knownRoles = map[string]bool{
+	"architect":       true,
+	"senior-engineer": true,
+	"junior-engineer": true,
+	"qa-functional":   true,
+	"security-ops":    true,
+	"designer":        true,
+	"doc-writer":      true,
+}
+
+// isVisibleToRole returns true if a note should be shown to the given role.
+// A note is visible if:
+//   - it has no role-specific tags (it is public/generic), OR
+//   - its tags include the calling role.
+func isVisibleToRole(tags, role string) bool {
+	if tags == "" {
+		return true // no tags = public
+	}
 	parts := strings.Split(tags, ",")
+	hasRoleTag := false
 	for _, p := range parts {
-		if strings.TrimSpace(p) == role {
-			return true
+		t := strings.TrimSpace(p)
+		if t == role {
+			return true // explicitly tagged for this role
+		}
+		if knownRoles[t] {
+			hasRoleTag = true // tagged for a different role
 		}
 	}
-	return false
+	// If none of the tags are a known role, the note is generic → public
+	return !hasRoleTag
 }

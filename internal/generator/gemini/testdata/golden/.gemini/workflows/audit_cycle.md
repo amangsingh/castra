@@ -7,11 +7,18 @@ description: Phase 1 - The Audit Loop (Security Verification)
 **Trigger:** Tasks appear in the `review` state.
 **Goal:** To systematically audit each task's implementation for security vulnerabilities before it can be marked done.
 
+## Step 0: Log Your Intent
+**Action:** Before starting any research or implementation, log your intent to work on the task. This ensures universality of surveillance and record-keeping.
+**Command:**
+```bash
+castra log add --role security-ops --msg "Starting work on task <TaskID>" --type task --entity <TaskID>
+```
+
 ## Step 1.1: Survey the Queue
 **Action:** Query the database for all tasks awaiting security review.
 **Command:**
 ```bash
-go run main.go task list --project <ProjectID>
+castra task list --role security-ops --project <ProjectID>
 ```
 *(Run this from within your scripts directory)*
 
@@ -19,7 +26,7 @@ go run main.go task list --project <ProjectID>
 **Action:** For each task in review, fetch its complete context using the view command. Read the task description, architectural notes, implementation details, and the audit log. Understand what the code does so you can identify what it exposes.
 **Command:**
 ```bash
-go run main.go task view <TaskID>
+castra task view --role security-ops <TaskID>
 ```
 
 ## Step 1.3: Conduct the Security Audit
@@ -40,14 +47,16 @@ go run main.go task view <TaskID>
 **Action:** Mark the task as security-approved. This sets `security_approved=true`. Combined with QA approval, this transitions the task to `done`.
 **Command:**
 ```bash
-go run main.go task update --status done <TaskID>
+castra task update --role security-ops --status done <TaskID>
+castra log add --role security-ops --msg "Security approval granted for task <TaskID>" --type task --entity <TaskID>
 ```
 
 ## Step 1.5b: Reject the Task
 **Action:** Reject the task back to `todo`. This resets ALL approval flags. You MUST attach a security finding note. See the `write_finding` workflow.
 **Command:**
 ```bash
-go run main.go task update --status todo <TaskID>
+castra task update --role security-ops --status todo --reason "<Reason>" <TaskID>
+castra log add --role security-ops --msg "Security rejection for task <TaskID>: <Reason>" --type task --entity <TaskID>
 ```
 
 ## Step 1.6: Continue the Loop

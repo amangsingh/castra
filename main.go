@@ -2,6 +2,10 @@ package main
 
 import (
 	"castra/internal/commands"
+	_ "castra/internal/generator/antigravity"
+	_ "castra/internal/generator/claude"
+	_ "castra/internal/generator/copilot"
+	_ "castra/internal/generator/gemini"
 	"fmt"
 	"os"
 )

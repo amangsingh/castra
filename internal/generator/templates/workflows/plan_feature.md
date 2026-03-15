@@ -1,29 +1,28 @@
 ---
-description: Phase 2 - Blueprinting (Feature & Milestone Decomposition)
+description: Executes Phase 2 (The Roadmap), decomposing a single, high-level Milestone (an Epic) into a sequence of smaller, concrete feature milestones.
 ---
 
-# Phase 2: Blueprinting (Feature & Milestone Decomposition)
+### Doctrine: The Art of the Roadmap
 
-**Trigger:** Phase 1 is complete. A project with a vision note exists.
-**Goal:** To decompose the project's vision into major thematic areas and define the high-level roadmap required to complete them.
+Your purpose here is to translate a grand, thematic Pillar into a concrete, sequential plan. You are the bridge from the "what" to the "how". Your thinking must be sequential, logical, and grounded in dependencies.
 
-## Step 2.1: Define Major Milestones
-**Action:** For each major feature identified in the vision note (e.g., "User Authentication"), create a Milestone. A Milestone groups related work together and tracks its overall completion, independent of time-boxed scheduling.
-**Command:**
-```bash
-castra milestone add --role architect --project <ProjectID> --name "User Authentication"
-```
-**Capture:** Record the Milestone ID.
+1.  **Isolate the Epic:** Your focus must be on a single, high-level milestone from the Blueprint phase. Do not try to plan multiple epics at once.
+2.  **Identify the Critical Path:** Analyze the epic and identify the 2-5 major "features" that must be built *in order* to complete it. This is not about individual tasks yet; it's about defining the major phases of work. Think in terms of dependencies: What absolutely must exist before the next piece can be built?
+3.  **Define Clear Outcomes:** Each feature you define must have a clear, tangible outcome. "Build the API" is a good feature. "Improve the database" is not. Be specific. These features will become the new, more granular **Milestones**.
 
-## Step 2.2: Define High-Level Roadmap Tasks
-**Action:** Break down the milestone into 2-5 high-level tasks. These are not yet granular engineering tasks. They are large phases of work assigned directly to the Milestone. Do not assign them to a Sprint yet.
-**Examples:** "API & Database Design," "Front-end Scaffolding," "Integration with Payment Gateway."
-**Command (repeat for each high-level task):**
-```bash
-castra task add --role architect --project <ProjectID> --milestone <MilestoneID> --title "API & Database Design" --desc "Define all required database tables, fields, and API endpoint contracts for this feature."
-```
+### Sequence: Roadmap Protocol
 
-## Step 2.3: Repeat for All Features
-**Action:** Repeat steps 2.1 and 2.2 for every major feature outlined in the architectural vision.
+1.  **Decompose the Epic into Feature Milestones**
+    *   Repeat `castra milestone add` for each Feature defined in the Doctrine phase (2-5 total).
 
-**Output:** The database now contains multiple open "Milestones," each populated with a series of high-level roadmap tasks sitting in the backlog. The project now has a complete, high-level structural map.
+    *Example:*
+    *   `castra milestone add --role architect --project "%%project_id%%" --parent "%%epic_milestone_id%%" --name "Feature: %%feature_1_name%%"`
+    *   `castra milestone add --role architect --project "%%project_id%%" --parent "%%epic_milestone_id%%" --name "Feature: %%feature_2_name%%"`
+    *   `castra milestone add --role architect --project "%%project_id%%" --parent "%%epic_milestone_id%%" --name "Feature: %%feature_3_name%%"`
+
+### Variables
+
+*   `%%project_id%%`: **[Input]** The ID of the parent project.
+*   `%%epic_milestone_id%%`: **[Input]** The ID of the high-level Epic milestone you are decomposing.
+*   `%%feature_1_name%%`, `%%feature_2_name%%`, etc.: **[Input]** The names of the 2-5 sequential features you have defined, derived from the Doctrine phase.
+

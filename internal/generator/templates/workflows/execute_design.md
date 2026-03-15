@@ -1,49 +1,30 @@
 ---
-description: Phase 1 - The Design Cycle (Building the Interface)
+description: The Designer's core loop for executing a design brief, from wireframe to final review.
 ---
 
-# Phase 1: The Design Cycle (Building the Interface)
+### Doctrine: The Art of Shaping
 
-**Trigger:** The start of your workday.
-**Goal:** To systematically work through the design tasks assigned to you in the active sprint.
+Your purpose is to translate the Architect's brief into a clear, intuitive, and beautiful user experience. You are the user's advocate.
 
-## Step 1.1: Survey Your Work
-**Action:** Query the database to see the list of available tasks assigned to you in the todo state.
-**Command:**
-```bash
-castra task list --role designer --project <ProjectID>
-```
+1.  **Absorb the Vision:** Your first step is to internalize the Architect's brief (`castra task view`). Understand the persona, the data, and the required interactions completely.
+2.  **Structure Before Style:** Begin with low-fidelity wireframes or flow diagrams. Map out the layout, component hierarchy, and navigation. Your goal is to solve the structural problem first. Record these initial blueprints in a `castra note`.
+3.  **Iterate and Refine:** Once the structure is sound, move to higher-fidelity mockups.
+4.  **Present for Judgment:** When your design is ready, submit it for review. The Architect will either approve it, locking the design, or reject it with feedback for another iteration.
 
-## Step 1.2: Claim Your Task
-**Action:** Choose the highest priority task. Claim exclusive ownership by moving it to the doing state.
-**Command:**
-```bash
-castra task update --role designer --status doing <TaskID>
-```
+### Sequence: Design Execution Protocol
 
-## Step 1.3: Gather Context
-**Action:** Before designing any screens, read the task's full description, user requirements, and any previous design notes.
-**Command:**
-```bash
-castra task view --role designer <TaskID>
-```
+1.  **Claim the Mandate**
+    *   `castra task update --role designer --status doing --id "%%task_id%%"`
+2.  **Study the Brief**
+    *   `castra task view --role designer --id "%%task_id%%"`
+3.  **Draft the Blueprint & Log It**
+    *   `castra note add --role designer --project "%%project_id%%" --task "%%task_id%%" --content "%%design_plan_and_wireframes%%" --tags "design,plan,ux"`
+4.  **Submit for Judgment**
+    *   `castra task update --role designer --status review --id "%%task_id%%"`
 
-## Step 1.4: Execute the Design
-**Action:** This is your primary function. Use the Pencil extension tools to map out interfaces, lay out components, and generate visual assets. Iterate until the design aligns perfectly with the intent described in the task.
+### Variables
 
-## Step 1.5: Document the Blueprint
-**Action:** Once the design is finalized, log a note linking the produced artifact (e.g., a `.pen` file) or explaining the core design decisions so developers can reference it.
-**Command:**
-```bash
-castra note add --role designer --project <ProjectID> --content "Designed user profile screen. See [profile_screen.pen] in designs directory." --tags "design"
-```
+*   `%%task_id%%`: **[Input]** The ID of the design task assigned by the Architect.
+*   `%%project_id%%`: **[Input]** The ID of the parent project.
+*   `%%design_plan_and_wireframes%%`: **[Input]** A detailed note containing your design rationale, user flow diagrams, and links to wireframe artifacts.
 
-## Step 1.6: Offer Your Work for Judgment
-**Action:** Submit the finalized design for review.
-**Command:**
-```bash
-castra task update --role designer --status review <TaskID>
-```
-
-## Step 1.7: Return to the Beginning
-**Action:** Repeat this loop. Go back to Step 1.1 and pull the next design task.

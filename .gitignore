@@ -9,7 +9,6 @@ castra.exe
 *.dylib
 
 # Local Data
-workspace.db
 *.log
 tmp/
 dist/

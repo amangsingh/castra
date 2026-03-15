@@ -10,9 +10,22 @@ import (
 	"runtime"
 	"strings"
 
+	"castra/internal/config"
+	"castra/internal/generator"
 	"castra/internal/generator/common"
 	"castra/internal/generator/templates"
 )
+
+type AntigravityGenerator struct{}
+
+func init() {
+	generator.Register("antigravity", &AntigravityGenerator{})
+}
+
+// InitWorkspace implements the generator.Generator interface.
+func (g *AntigravityGenerator) InitWorkspace(baseDir string, cfg config.VendorConfig) error {
+	return InitWorkspaceFromConfig(baseDir, cfg)
+}
 
 func InitWorkspace(baseDir string) error {
 	// 1. Create base directories

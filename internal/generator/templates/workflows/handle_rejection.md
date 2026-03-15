@@ -1,28 +1,33 @@
 ---
-description: Phase 2 - The Crucible (Handling Rejection)
+description: The Engineer's ritual for processing a rejected task, from understanding the failure to resubmitting the corrected work.
 ---
 
-# Phase 2: The Crucible (Handling Rejection)
+### Doctrine: The Crucible's Lesson
 
-**Trigger:** A task you previously submitted to review reappears in your todo list.
-**Goal:** To address the feedback from QA or Security with urgency and precision.
+You have failed. The work you submitted was found wanting. This is not a punishment; it is an opportunity. Your goal now is not just to fix the bug, but to understand the flaw in your original work. Humility and precision are your only tools.
 
-## Step 2.1: Prioritize the Rejected Task
-**Action:** A rejected task is a bug in your work. It takes absolute priority over any new feature development.
+1.  **The Law of Urgency:** A rejected task is a bug in your own code. It takes absolute priority over any new feature development. You will address it immediately.
+2.  **The Law of Understanding:** Before you write a single line of code, you will read the rejection note from QA or Security (`castra note list`). You will not skim it. You will internalize the failure: Why was it rejected? What was the root cause?
+3.  **The Law of the New Plan:** A rejection invalidates your original plan. You will formulate a *new* implementation plan to address the feedback and log it as a new note. Do not begin the fix without a plan for the fix.
+4.  **The Law of the Root Cause:** Do not just patch the symptom. That is the work of a lesser engineer. You will find the underlying flaw in your logic, your craft, or your understanding, and you will purge it.
 
-## Step 2.2: Understand the Failure
-**Action:** Before writing any code, read the notes associated with the task to understand why it was rejected. Was it a functional bug found by QA? A security vulnerability found by Ops?
-**Command:**
-```bash
-go run main.go note list --project <ProjectID> --task <TaskID>
-```
+### Sequence: The Ritual of Correction
 
-## Step 2.3: Fix the Root Cause
-**Action:** Correct the issue. Do not just patch the symptom; fix the underlying flaw in your logic.
+1.  **Claim the Rejected Task**
+    *   `castra task update --role "%%role%%" --status doing "%%task_id%%"`
+2.  **Study the Rejection Note**
+    *   `castra note list --role "%%role%%" --project "%%project_id%%" --task "%%task_id%%"`
+3.  **Log the Plan for the Fix**
+    *   `castra note add --role "%%role%%" --project "%%project_id%%" --task "%%task_id%%" --content "%%fix_implementation_plan%%" --tags "rejection-plan,fix"`
+4.  **(OFF-WORKFLOW) Execute the Fix**
+    *   Write the code that implements your new plan and corrects the root cause of the failure.
+5.  **Resubmit to the Crucible**
+    *   `castra task update --role "%%role%%" --status review "%%task_id%%"`
 
-## Step 2.4: Resubmit to the Crucible
-**Action:** Once the fix is implemented, move the task back to the review state to be judged again.
-**Command:**
-```bash
-go run main.go task update --status review <TaskID>
-```
+### Variables
+
+*   `%%project_id%%`: **[Input]** The ID of the project you are working on.
+*   `%%task_id%%`: **[Input]** The ID of the rejected task.
+*   `%%role%%`: **[Input]** Your role (e.g., `senior-engineer`, `junior-engineer`).
+*   `%%fix_implementation_plan%%`: **[Input]** A detailed, structured markdown block containing the plan to address the rejection feedback.
+

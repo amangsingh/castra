@@ -124,6 +124,148 @@ var Migrations = []Migration{
 			return nil
 		},
 	},
+	{
+		Version:     4,
+		Description: "Add archetypes table and archetype_id to tasks",
+		Func: func(tx *sql.Tx) error {
+			// Create archetypes table
+			_, err := tx.Exec(`
+			CREATE TABLE IF NOT EXISTS archetypes (
+				id INTEGER PRIMARY KEY AUTOINCREMENT,
+				name TEXT NOT NULL UNIQUE,
+				default_role TEXT NOT NULL,
+				workflow_path TEXT NOT NULL,
+				created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+				updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+				deleted_at DATETIME
+			)`)
+			if err != nil {
+				return err
+			}
+
+			// Add archetype_id to tasks
+			if err := addColumnIfNotExists(tx, "tasks", "archetype_id", "INTEGER REFERENCES archetypes(id)"); err != nil {
+				return err
+			}
+			return nil
+		},
+	},
+	{
+		Version:     5,
+		Description: "Add archetype_id to milestones",
+		Func: func(tx *sql.Tx) error {
+			return addColumnIfNotExists(tx, "milestones", "archetype_id", "INTEGER REFERENCES archetypes(id)")
+		},
+	},
+	{
+		Version:     6,
+		Description: "Add castra_errors table for centralized non-fatal error logging",
+		SQL: `CREATE TABLE IF NOT EXISTS castra_errors (
+			id INTEGER PRIMARY KEY AUTOINCREMENT,
+			role TEXT,
+			command TEXT,
+			message TEXT NOT NULL,
+			severity TEXT NOT NULL DEFAULT 'warn',
+			created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+		);`,
+	},
+	{
+		Version:     7,
+		Description: "Replace workflow_path with statuses JSON column in archetypes",
+		Func: func(tx *sql.Tx) error {
+			// Add statuses column (SQLite cannot drop columns, so workflow_path stays but is unused)
+			if err := addColumnIfNotExists(tx, "archetypes", "statuses", `TEXT NOT NULL DEFAULT '["todo","doing","review","done"]'`); err != nil {
+				return err
+			}
+			return nil
+		},
+	},
+	{
+		Version:     8,
+		Description: "Seed Default archetype and backfill tasks with NULL archetype_id",
+		Func: func(tx *sql.Tx) error {
+			// Upsert a 'Default' archetype with the standard engineering pipeline
+			_, err := tx.Exec(`
+				INSERT OR IGNORE INTO archetypes (id, name, default_role, statuses)
+				VALUES (1, 'Default', '', '["todo","doing","review","done"]')`)
+			if err != nil {
+				return err
+			}
+			// Backfill tasks that have no archetype assigned
+			_, err = tx.Exec(`UPDATE tasks SET archetype_id = 1 WHERE archetype_id IS NULL`)
+			return err
+		},
+	},
+	{
+		Version:     9,
+		Description: "Add qa_bypassed and security_bypassed columns to tasks for Break Glass audit trail",
+		Func: func(tx *sql.Tx) error {
+			if err := addColumnIfNotExists(tx, "tasks", "qa_bypassed", "BOOLEAN DEFAULT FALSE"); err != nil {
+				return err
+			}
+			return addColumnIfNotExists(tx, "tasks", "security_bypassed", "BOOLEAN DEFAULT FALSE")
+		},
+	},
+	{
+		Version:     10,
+		Description: "Remove legacy workflow_path from archetypes",
+		Func: func(tx *sql.Tx) error {
+			// 1. Create the new table without workflow_path
+			_, err := tx.Exec(`
+			CREATE TABLE IF NOT EXISTS archetypes_new (
+				id INTEGER PRIMARY KEY AUTOINCREMENT,
+				name TEXT NOT NULL UNIQUE,
+				default_role TEXT NOT NULL,
+				statuses TEXT NOT NULL DEFAULT '["todo","doing","review","done"]',
+				created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+				updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+				deleted_at DATETIME
+			)`)
+			if err != nil {
+				return err
+			}
+
+			// 2. Transfer data
+			_, err = tx.Exec(`
+			INSERT INTO archetypes_new (id, name, default_role, statuses, created_at, updated_at, deleted_at)
+			SELECT id, name, default_role, statuses, created_at, updated_at, deleted_at FROM archetypes`)
+			if err != nil {
+				return err
+			}
+
+			// 3. Drop old table
+			_, err = tx.Exec(`DROP TABLE archetypes`)
+			if err != nil {
+				return err
+			}
+
+			// 4. Rename new table
+			_, err = tx.Exec(`ALTER TABLE archetypes_new RENAME TO archetypes`)
+			return err
+		},
+	},
+	{
+		Version:     11,
+		Description: "Add hierarchical milestones and project-scoped archetypes",
+		Func: func(tx *sql.Tx) error {
+			// 1. Update milestones: add parent_id (self-FK) and description
+			if err := addColumnIfNotExists(tx, "milestones", "parent_id", "INTEGER REFERENCES milestones(id)"); err != nil {
+				return err
+			}
+			if err := addColumnIfNotExists(tx, "milestones", "description", "TEXT"); err != nil {
+				return err
+			}
+
+			// 2. Update archetypes: add project_id (optional FK) and description
+			if err := addColumnIfNotExists(tx, "archetypes", "project_id", "INTEGER REFERENCES projects(id)"); err != nil {
+				return err
+			}
+			if err := addColumnIfNotExists(tx, "archetypes", "description", "TEXT"); err != nil {
+				return err
+			}
+			return nil
+		},
+	},
 }
 
 // RunMigrations applies all pending migrations to the database.

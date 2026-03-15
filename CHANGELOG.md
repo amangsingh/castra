@@ -1,5 +1,34 @@
 # Changelog
 
+## v2.0.0 (2026-03-15)
+
+### Added
+- **SDLC Tier-3 Maturity**: Achieving full compliance with high-integrity "Airtight State" requirements.
+  - **Hierarchical Milestones**: Support for nested milestones and complex feature roadmaps.
+  - **Scoped Archetypes**: Project-specific status pipelines enabling granular workflow enforcement.
+  - **Universal Audit Log**: Transactional recording of every state change with immutable role signatures.
+  - **Gate 0 Alignment**: Mandatory pre-verification of system status before state modifications.
+- **HATEOAS Interaction Protocol**: Introduced a dynamic Affordance Engine that surfaces available CLI commands based on current task state and role permissions.
+- **Multi-Vendor Coordination Matrix**: Unified project initialization and coordination across **Antigravity**, **Claude Code**, **GitHub Copilot**, and **Google Gemini Code Assist**.
+- **Terminal UI (TUI) Modernization**:
+  - **Live Hierarchy Visualization**: Real-time rendering of hierarchical milestones in the dashboard.
+  - **Interactive Affordance Bar**: Visual feedback of HATEOAS-driven available actions.
+  - **Audit Drill-down**: Real-time inspection of transactional history for any task.
+  - **Break-Glass Highlighting**: Visual indicators for emergency overrides and post-incident reviews.
+- **Persona Linter (Gate 3)**: Systemic enforcement of `SKILL.md` constraints to eliminate agent persona drift.
+- **Multi-Vendor project initialization**: Unified `castra init` command with agnostic workspace generation for all supported platforms.
+
+### Changed
+- **Database Schema (v11)**: Migrated core storage to support hierarchical structures and scoped status pipelines.
+- **Core Library Refactor**: Centralized business logic (RBAC, dual-approvals) to use the new Hierarchical SDLC engine.
+- **Simplified CLI Experience**: Positioned as a single-entry protocol (`castra init`) with dynamic vendor-agnostic scaffolding.
+
+### Fixed
+- **NULL Scan Regressions**: Fixed a critical crash in the core library when scanning older tasks with NULL descriptions (legacy v1.x data).
+- **Hierarchical Integrity**: Resolved an issue where child milestones could lose their parent pointers during project restoration.
+- **Audit Consistency**: Ensured that rejections correctly reset both functional and security approval flags in a single atomic transaction.
+
+
 ## v1.4.0 (2026-03-10)
 
 ### Added
@@ -9,6 +38,10 @@
 - **Sprint Automation**: Sprints automatically start when the first task is picked up and auto-complete when all tasks are done.
 - **Session Identity Enforcement**: Systemic checks enforce role boundaries to prevent agent persona drift.
 - **Test Coverage Setup**: Added Golden File framework testing for generators and comprehensive unit testing for command router and CLI logic.
+- **Auto-Audit via Router (`MutatingCommand` interface)**: All state-mutating commands (`task.add`, `task.update`, `project.add`, etc.) now automatically write a best-effort audit entry on success without any caller-side instrumentation. Implemented via the new optional `MutatingCommand` interface in `internal/commands/router.go`.
+- **Integration Test Suite for Auto-Audit**: Added `internal/commands/auto_audit_test.go` with 6 tests covering: mutating commands produce entries, read-only commands do not, failed commands do not produce spurious entries, and the role is correctly captured in the audit record.
+- **Hardened Universal Constitution (Law 2 & Law 9)**: Rewrote Law 2 (Role Boundaries) from a 3-bullet generic list into per-role prohibitions covering all 7 system roles. Added Law 9 (The Law of Dual Approval) explicitly mandating the QA-first → Security-second approval sequence with prohibition on out-of-order approvals. Updated `qa-functional`, `security-ops`, and `junior-engineer` SKILL.md files to surface these constraints inline.
+- **Law 3 Updated (Mandatory Auditing)**: Distinguished between automatic audit entries (written by the router) and manual context log entries (written by the agent via `castra log add`), eliminating ambiguity for agents receiving dual-audit instructions.
 
 ### Changed
 - **CLI Architecture Refactor**: Separated business logic from the CLI CRUD layer by introducing a Command Router Interface.

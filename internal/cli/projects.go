@@ -26,7 +26,7 @@ func AddProject(db *sql.DB, name, description, notes string) (int64, error) {
 
 // ListProjects retrieves active projects (default) or supports filters
 func ListProjects(db *sql.DB, showArchived bool, showDeleted bool) ([]Project, error) {
-	query := `SELECT id, name, description, status, notes FROM projects WHERE 1=1`
+	query := `SELECT id, name, COALESCE(description, ''), status, COALESCE(notes, '') FROM projects WHERE 1=1`
 
 	if !showDeleted {
 		query += ` AND deleted_at IS NULL`
@@ -50,6 +50,34 @@ func ListProjects(db *sql.DB, showArchived bool, showDeleted bool) ([]Project, e
 		projects = append(projects, p)
 	}
 	return projects, nil
+}
+
+// GetProject retrieves a single project
+func GetProject(db *sql.DB, id int64) (*Project, error) {
+	var p Project
+	query := `SELECT id, name, COALESCE(description, ''), status, COALESCE(notes, '') FROM projects WHERE id = ? AND deleted_at IS NULL`
+	err := db.QueryRow(query, id).Scan(&p.ID, &p.Name, &p.Description, &p.Status, &p.Notes)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return nil, fmt.Errorf("project not found")
+		}
+		return nil, err
+	}
+	return &p, nil
+}
+
+// UpdateProjectStatus updates the status of a project
+func UpdateProjectStatus(db *sql.DB, id int64, status, role string) error {
+	if role != "architect" {
+		return fmt.Errorf("only architect can update project status")
+	}
+
+	if status != "active" && status != "archived" {
+		return fmt.Errorf("invalid project status: %s (must be 'active' or 'archived')", status)
+	}
+
+	_, err := db.Exec(`UPDATE projects SET status = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?`, status, id)
+	return err
 }
 
 // UpdateProject updates fields dynamically

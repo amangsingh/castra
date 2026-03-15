@@ -7,6 +7,13 @@ description: Phase 2 - The Finding Protocol (Security Vulnerability Report)
 **Trigger:** A task has failed the security audit during the Audit Loop.
 **Goal:** To provide a structured, actionable security finding so the engineer can remediate the vulnerability.
 
+## Step 0: Log Your Intent
+**Action:** Before starting any research or implementation, log your intent to work on the task. This ensures universality of surveillance and record-keeping.
+**Command:**
+```bash
+castra log add --role security-ops --msg "Starting work on task <TaskID>" --type task --entity <TaskID>
+```
+
 ## Step 2.1: Document the Finding
 **Action:** Before rejecting the task, write a note attached to the specific task. A rejection without a finding report is negligent — you are the last line of defense.
 
@@ -19,21 +26,21 @@ description: Phase 2 - The Finding Protocol (Security Vulnerability Report)
 
 **Command:**
 ```bash
-go run main.go note add --project <ProjectID> --task <TaskID> --content "SECURITY FINDING: [Class]: SQL Injection. [Severity]: Critical. [Location]: handlers/login.go:42 handleLogin(). [Description]: User input concatenated directly into SQL query without parameterization. [Remediation]: Use parameterized queries via db.Query with ? placeholders." --tags "security,vulnerability,critical"
+castra note add --role security-ops --project <ProjectID> --task <TaskID> --content "SECURITY FINDING: [Class]: SQL Injection. [Severity]: Critical. [Location]: handlers/login.go:42 handleLogin(). [Description]: User input concatenated directly into SQL query without parameterization. [Remediation]: Use parameterized queries via db.Query with ? placeholders." --tags "security,vulnerability,critical"
 ```
 
 ## Step 2.2: Reject the Task
 **Action:** Reject the task. The status change to `todo` automatically resets both approval flags, forcing a complete re-review cycle after the fix.
 **Command:**
 ```bash
-go run main.go task update --status todo <TaskID>
+castra task update --role security-ops --status todo --reason "<Vulnerability Class>: <Severity>" <TaskID>
 ```
 
 ## Step 2.3: Log to Audit Trail
 **Action:** Security findings are significant events. Ensure the audit log captures the rejection.
 **Command:**
 ```bash
-go run main.go log add --entity task --entity-id <TaskID> --action "security_rejection" --payload "Rejected: <Vulnerability Class>. Severity: <Severity>."
+castra log add --role security-ops --msg "Security rejection for task <TaskID>: <Vulnerability Class>" --type task --entity <TaskID>
 ```
 
 ## Step 2.4: Move On

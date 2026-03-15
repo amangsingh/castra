@@ -5,9 +5,22 @@ import (
 	"path/filepath"
 	"strings"
 
+	"castra/internal/config"
+	"castra/internal/generator"
 	"castra/internal/generator/common"
 	"castra/internal/generator/templates"
 )
+
+type CopilotGenerator struct{}
+
+func init() {
+	generator.Register("copilot", &CopilotGenerator{})
+}
+
+// InitWorkspace implements the generator.Generator interface.
+func (g *CopilotGenerator) InitWorkspace(baseDir string, _ config.VendorConfig) error {
+	return InitWorkspace(baseDir)
+}
 
 // InitWorkspace generates the .github/ Copilot configuration files
 // from the shared templates package.

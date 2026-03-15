@@ -7,6 +7,13 @@ description: Phase 2 - The Blueprint (Planning the Interface)
 **Trigger:** The Architect assigns a high-level feature that requires user interface work, but the exact flow and screens are not yet defined.
 **Goal:** Define the visual architecture and component structure before starting execution.
 
+## Step 0: Log Your Intent
+**Action:** Before starting any research or implementation, log your intent to work on the task. This ensures universality of surveillance and record-keeping.
+**Command:**
+```bash
+castra log add --role designer --msg "Starting work on task <TaskID>" --type task --entity <TaskID>
+```
+
 ## Step 2.1: Receive the Mandate
 **Action:** The Architect will assign you a task in the `planning` or `todo` state that requires design definition. Claim it.
 **Command:**

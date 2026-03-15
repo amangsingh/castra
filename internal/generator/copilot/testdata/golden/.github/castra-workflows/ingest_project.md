@@ -7,6 +7,13 @@ description: Phase 0 - Reality Sync (Existing Codebase Ingestion)
 **Trigger:** Castra is initialized in a directory that already contains a significant, pre-existing codebase. 
 **Goal:** To establish the "till date" structural map of reality into the `workspace.db`, allowing you to plan *new* work on top of what already exists.
 
+## Step 0: Log Your Intent
+**Action:** Before starting any research or implementation, log your intent to work on the task. This ensures universality of surveillance and record-keeping.
+**Command:**
+```bash
+castra log add --role architect --msg "Starting work on task <TaskID>" --type task --entity <TaskID>
+```
+
 ## Step 0.1: Analyze & Synthesize
 **Action:** Review the existing codebase. Understand its architecture, major components, and current state.
 **Output:** You should have a mental map of the system's "North Star" and its major feature domains.
@@ -23,7 +30,14 @@ castra project add --role architect --name "Project Name" --desc "High-level des
 **Action:** Add a foundational note containing the high-level architectural overview of what you've just analyzed.
 **Command:**
 ```bash
-castra note add --role architect --project <ProjectID> --tags "vision,architecture,ingestion" --content "..."
+castra --role architect note add --project <ProjectID> --tags "vision,architecture,ingestion" --content "..."
+```
+
+## Step 0.3.5: Create Archetypes
+**Action:** Before creating tasks, set up the base archetypes for the project to ensure tasks have proper status pipelines.
+**Command:**
+```bash
+castra --role architect archetype add --project <ProjectID> --name "Legacy Ingestion" --desc "Fast-track for inherited code" --statuses "todo,done"
 ```
 
 ## Step 0.4: Define Existing Milestones

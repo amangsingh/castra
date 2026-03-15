@@ -29,14 +29,15 @@ func TestProjectAddMissingName(t *testing.T) {
 	commands.AssertError(t, cmd.Execute(ctx))
 }
 
-// TestProjectAddNonArchitect verifies RBAC — only architect can add projects.
+// TestProjectAddNonArchitect verifies Persona Linter rejection — only architect can add projects.
 func TestProjectAddNonArchitect(t *testing.T) {
 	db := commands.NewTestDB(t)
-	cmd := &commands.ProjectAddCommand{}
-	ctx := commands.NewTestCtx(db, "senior-engineer", []string{"--name", "Sneaky"})
-	err := cmd.Execute(ctx)
-	if err == nil || !strings.Contains(err.Error(), "architect") {
-		t.Errorf("expected architect-only error, got: %v", err)
+	reg := commands.NewRegistry()
+	reg.Register(&commands.ProjectAddCommand{})
+	ctx := commands.NewTestCtx(db, "senior-engineer", []string{"add", "--name", "Sneaky"})
+	err := reg.Execute(ctx)
+	if err == nil || !strings.Contains(err.Error(), "Outside my jurisdiction") {
+		t.Errorf("expected persona rejection error, got: %v", err)
 	}
 }
 
@@ -86,13 +87,14 @@ func TestProjectDeleteHappyPath(t *testing.T) {
 	commands.AssertOutputContains(t, out2, "soft deleted")
 }
 
-// TestProjectDeleteNonArchitect verifies RBAC on delete.
+// TestProjectDeleteNonArchitect verifies Persona Linter rejection on delete.
 func TestProjectDeleteNonArchitect(t *testing.T) {
 	db := commands.NewTestDB(t)
-	cmd := &commands.ProjectDeleteCommand{}
-	ctx := commands.NewTestCtx(db, "qa-functional", []string{"1"})
-	err := cmd.Execute(ctx)
-	if err == nil || !strings.Contains(err.Error(), "architect") {
-		t.Errorf("expected architect-only error, got: %v", err)
+	reg := commands.NewRegistry()
+	reg.Register(&commands.ProjectDeleteCommand{})
+	ctx := commands.NewTestCtx(db, "qa-functional", []string{"delete", "1"})
+	err := reg.Execute(ctx)
+	if err == nil || !strings.Contains(err.Error(), "Outside my jurisdiction") {
+		t.Errorf("expected persona rejection error, got: %v", err)
 	}
 }

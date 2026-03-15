@@ -21,8 +21,18 @@ func AddAuditEntry(db *sql.DB, entityType string, entityID int64, action, role, 
 	return err
 }
 
+// AddAuditEntryReturnID is like AddAuditEntry but returns the inserted row ID.
+func AddAuditEntryReturnID(db *sql.DB, entityType string, entityID int64, action, role, payload string) (int64, error) {
+	query := `INSERT INTO audit_log (entity_type, entity_id, action, role, payload) VALUES (?, ?, ?, ?, ?)`
+	res, err := db.Exec(query, entityType, entityID, action, role, payload)
+	if err != nil {
+		return 0, err
+	}
+	return res.LastInsertId()
+}
+
 func ListAuditEntries(db *sql.DB, entityType string, entityID *int64) ([]AuditEntry, error) {
-	query := `SELECT id, COALESCE(entity_type, ''), COALESCE(entity_id, 0), action, COALESCE(role, ''), COALESCE(payload, ''), timestamp FROM audit_log WHERE 1=1`
+	query := `SELECT id, COALESCE(entity_type, ''), COALESCE(entity_id, 0), COALESCE(action, ''), COALESCE(role, ''), COALESCE(payload, ''), timestamp FROM audit_log WHERE 1=1`
 	args := []interface{}{}
 
 	if entityType != "" {

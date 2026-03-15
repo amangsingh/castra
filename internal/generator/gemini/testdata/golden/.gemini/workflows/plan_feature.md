@@ -7,6 +7,13 @@ description: Phase 2 - Blueprinting (Feature & Milestone Decomposition)
 **Trigger:** Phase 1 is complete. A project with a vision note exists.
 **Goal:** To decompose the project's vision into major thematic areas and define the high-level roadmap required to complete them.
 
+## Step 0: Log Your Intent
+**Action:** Before starting any research or implementation, log your intent to work on the task. This ensures universality of surveillance and record-keeping.
+**Command:**
+```bash
+castra log add --role architect --msg "Starting work on task <TaskID>" --type task --entity <TaskID>
+```
+
 ## Step 2.1: Define Major Milestones
 **Action:** For each major feature identified in the vision note (e.g., "User Authentication"), create a Milestone. A Milestone groups related work together and tracks its overall completion, independent of time-boxed scheduling.
 **Command:**

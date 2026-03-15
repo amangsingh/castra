@@ -6,7 +6,7 @@ import (
 	"fmt"
 )
 
-type LogAddCommand struct{}
+type LogAddCommand struct{ lastID int64 }
 
 func (c *LogAddCommand) Name() string        { return "add" }
 func (c *LogAddCommand) Description() string { return "Add an audit log entry" }
@@ -25,7 +25,17 @@ func (c *LogAddCommand) Execute(ctx *Context) error {
 		return fmt.Errorf("message required (--msg)")
 	}
 
-	return cli.AddAuditEntry(ctx.DB, *entityType, *entityID, *msg, ctx.Role, "")
+	eid := *entityID
+	lid, err := cli.AddAuditEntryReturnID(ctx.DB, *entityType, eid, *msg, ctx.Role, "")
+	if err != nil {
+		return err
+	}
+	c.lastID = lid
+	return nil
+}
+
+func (c *LogAddCommand) AuditInfo() (string, int64, string) {
+	return "audit_log", c.lastID, "log.add"
 }
 
 type LogListCommand struct{}
@@ -33,6 +43,10 @@ type LogListCommand struct{}
 func (c *LogListCommand) Name() string        { return "list" }
 func (c *LogListCommand) Description() string { return "List audit log entries" }
 func (c *LogListCommand) Usage() string       { return "castra log list [--type <type>] [--entity <id>]" }
+
+func (c *LogListCommand) ReadInfo() (string, string) {
+	return "audit_log", "log.list"
+}
 
 func (c *LogListCommand) Execute(ctx *Context) error {
 	fs := flag.NewFlagSet("log list", flag.ExitOnError)

@@ -7,6 +7,13 @@ description: Phase 3 - Tactical Planning (Work Order Generation)
 **Trigger:** A decision is made to begin active development on a specific Milestone from Phase 2.
 **Goal:** To break down a high-level roadmap task into a series of small, concrete, and immediately actionable tasks for the engineering team, and schedule them into a time-box.
 
+## Step 0: Log Your Intent
+**Action:** Before starting any research or implementation, log your intent to work on the task. This ensures universality of surveillance and record-keeping.
+**Command:**
+```bash
+castra log add --role architect --msg "Starting work on task <TaskID>" --type task --entity <TaskID>
+```
+
 ## Step 3.1: Create a Time-Boxed "Active Sprint"
 **Action:** Create a new, short-term sprint for the upcoming development cycle (e.g., an "Iteration Batch" or "Session"). Sprints manage the *when*.
 **Dates are Optional:** For AI agents, a sprint might take 10 minutes, so `start` and `end` dates/labels are purely optional strings for context (e.g., `--start "Session 1"` or omitted entirely).

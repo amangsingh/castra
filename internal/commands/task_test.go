@@ -45,11 +45,12 @@ func TestTaskAddMissingRequired(t *testing.T) {
 
 func TestTaskAddNonArchitect(t *testing.T) {
 	db := commands.NewTestDB(t)
-	cmd := &commands.TaskAddCommand{}
-	ctx := commands.NewTestCtx(db, "senior-engineer", []string{"--project", "1", "--title", "Hack"})
-	err := cmd.Execute(ctx)
-	if err == nil || !strings.Contains(err.Error(), "architect") {
-		t.Errorf("expected architect-only error, got: %v", err)
+	reg := commands.NewRegistry()
+	reg.Register(&commands.TaskAddCommand{})
+	ctx := commands.NewTestCtx(db, "senior-engineer", []string{"add", "--project", "1", "--title", "Hack"})
+	err := reg.Execute(ctx)
+	if err == nil || !strings.Contains(err.Error(), "Outside my jurisdiction") {
+		t.Errorf("expected persona rejection error, got: %v", err)
 	}
 }
 
@@ -123,13 +124,17 @@ func TestTaskDeleteRBAC(t *testing.T) {
 	projID := seedProject(t, db, "DelTaskProj")
 	taskID := seedTask(t, db, projID, 0, 0, "To Delete")
 
-	cmd := &commands.TaskDeleteCommand{}
+	reg := commands.NewRegistry()
+	reg.Register(&commands.TaskDeleteCommand{})
 
-	// Non-architect cannot delete
-	ctx1 := commands.NewTestCtx(db, "senior-engineer", []string{itoa(taskID)})
-	commands.AssertError(t, cmd.Execute(ctx1))
+	// Non-architect cannot delete — Persona Linter fires at router level
+	ctx1 := commands.NewTestCtx(db, "senior-engineer", []string{"delete", itoa(taskID)})
+	err := reg.Execute(ctx1)
+	if err == nil || !strings.Contains(err.Error(), "Outside my jurisdiction") {
+		t.Errorf("expected persona rejection error, got: %v", err)
+	}
 
 	// Architect can delete
-	ctx2 := commands.NewTestCtx(db, "architect", []string{itoa(taskID)})
-	commands.AssertNoError(t, cmd.Execute(ctx2))
+	ctx2 := commands.NewTestCtx(db, "architect", []string{"delete", itoa(taskID)})
+	commands.AssertNoError(t, reg.Execute(ctx2))
 }

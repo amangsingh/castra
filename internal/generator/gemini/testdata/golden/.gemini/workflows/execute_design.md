@@ -7,6 +7,13 @@ description: Phase 1 - The Design Cycle (Building the Interface)
 **Trigger:** The start of your workday.
 **Goal:** To systematically work through the design tasks assigned to you in the active sprint.
 
+## Step 0: Log Your Intent
+**Action:** Before starting any research or implementation, log your intent to work on the task. This ensures universality of surveillance and record-keeping.
+**Command:**
+```bash
+castra log add --role designer --msg "Starting work on task <TaskID>" --type task --entity <TaskID>
+```
+
 ## Step 1.1: Survey Your Work
 **Action:** Query the database to see the list of available tasks assigned to you in the todo state.
 **Command:**

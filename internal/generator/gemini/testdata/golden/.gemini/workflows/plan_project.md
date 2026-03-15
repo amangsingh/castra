@@ -7,6 +7,13 @@ description: Phase 1 - Strategic Planning (Project Inception)
 **Trigger:** A new, high-level project directive from the user.
 **Goal:** To establish the project's "North Star" — its existence and its core architectural principles — within the database.
 
+## Step 0: Log Your Intent
+**Action:** Before starting any research or implementation, log your intent to work on the task. This ensures universality of surveillance and record-keeping.
+**Command:**
+```bash
+castra log add --role architect --msg "Starting work on task <TaskID>" --type task --entity <TaskID>
+```
+
 ## Step 1.1: Create the Project Container
 **Action:** Execute the castra project add command. The name should be thematic, and the description should be a one-sentence summary of the vision.
 **Command:**

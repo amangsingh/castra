@@ -7,6 +7,13 @@ description: Phase 2 - The Rejection Protocol (Actionable Feedback)
 **Trigger:** A task has failed functional verification during the Review Loop.
 **Goal:** To provide the engineer with a clear, actionable rejection note so the defect can be fixed on the first attempt.
 
+## Step 0: Log Your Intent
+**Action:** Before starting any research or implementation, log your intent to work on the task. This ensures universality of surveillance and record-keeping.
+**Command:**
+```bash
+castra log add --role <role> --msg "Starting work on task <TaskID>" --type task --entity <TaskID>
+```
+
 ## Step 2.1: Document the Failure
 **Action:** Before rejecting the task, write a note attached to the specific task. A rejection without a note is a cardinal sin — the engineer cannot fix what they cannot understand.
 
@@ -18,14 +25,14 @@ description: Phase 2 - The Rejection Protocol (Actionable Feedback)
 
 **Command:**
 ```bash
-go run main.go note add --project <ProjectID> --task <TaskID> --content "REJECTION: [Expected]: Login with empty password shows error. [Actual]: Application crashes. [Steps]: 1. Open login. 2. Leave password blank. 3. Click submit. [Severity]: Critical." --tags "qa,rejection"
+castra note add --project <ProjectID> --task <TaskID> --content "REJECTION: [Expected]: Login with empty password shows error. [Actual]: Application crashes. [Steps]: 1. Open login. 2. Leave password blank. 3. Click submit. [Severity]: Critical." --tags "qa,rejection"
 ```
 
 ## Step 2.2: Reject the Task
 **Action:** Now reject. The status change to `todo` will automatically reset both `qa_approved` and `security_approved` flags, forcing a complete re-review cycle.
 **Command:**
 ```bash
-go run main.go task update --status todo <TaskID>
+castra task update --status todo <TaskID>
 ```
 
 ## Step 2.3: Move On

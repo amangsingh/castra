@@ -1,41 +1,25 @@
 ---
-description: Phase 2 - The Blueprint (Planning the Interface)
+description: Executes Phase 2 (Interface Blueprinting), creating a formal, UX-driven design brief for the @designer persona.
 ---
 
-# Phase 2: The Blueprint (Planning the Interface)
+### Doctrine: The Art of the Design Brief
 
-**Trigger:** The Architect assigns a high-level feature that requires user interface work, but the exact flow and screens are not yet defined.
-**Goal:** Define the visual architecture and component structure before starting execution.
+Your purpose is to translate a functional requirement into a clear, actionable brief for the Designer. You are the product manager defining the problem for the artist to solve. A shallow brief leads to a shallow product. Your brief **MUST** be a detailed markdown document containing the following sections:
 
-## Step 2.1: Receive the Mandate
-**Action:** The Architect will assign you a task in the `planning` or `todo` state that requires design definition. Claim it.
-**Command:**
-```bash
-castra task update --role designer --status doing <TaskID>
-```
+1.  **The User Persona & Story:** Who is this for? What is their goal? (e.g., "This is for a Senior Engineer who needs to quickly see the status of all their assigned tasks without leaving the terminal.")
+2.  **Information & Data Requirements:** What specific pieces of data *must* be visible on the screen? This is non-negotiable. (e.g., "The view must display: Task Title, Task Status, Task ID, Priority.")
+3.  **Core Views & Navigation Flow:** Blueprint the distinct "screens" and how the user moves between them. (e.g., "User starts on a `Project List` view, selecting a project moves them to a `Milestone List` view.")
+4.  **Key Interactions & State Changes:** Define the key actions the user must be able to take. Focus on the what, not the how. (e.g., "User must be able to change a task's status from `todo` to `in_progress`.")
+5.  **The Prohibition of Art:** You are strictly forbidden from specifying colors, fonts, spacing, or any other aesthetic details. Your job is to provide the blueprint of the house, not choose the paint color.
 
-## Step 2.2: Understand the Context
-**Action:** Read the task definition completely. What is the goal? Who is the user? What data needs to be displayed or collected?
-**Command:**
-```bash
-castra task view --role designer <TaskID>
-```
+### Sequence: Design Briefing Protocol
 
-## Step 2.3: Draft the Wireframes or Flow
-**Action:** Before committing to high-fidelity designs, map out the layout, component hierarchy, and navigation structure. This is the structural blueprint. Record key decisions in a design note.
-**Command:**
-```bash
-castra note add --role designer --project <ProjectID> --content "Planned navigation flow. Proposed screens: [Dashboard, Settings, User Profile]." --tags "design,plan"
-```
+1.  **Create and Assign the Design Task**
+    *   `castra task add --role architect --sprint "%%sprint_id%%" --title "Design Brief: %%feature_name%%" --desc "%%ux_design_brief%%" --assignee "designer"`
 
-## Step 2.4: Seek Feedback
-**Action:** Present the structural plan for review before executing the final design. Move the task to review so the Architect or Sovereign can approve the direction.
-**Command:**
-```bash
-castra task update --role designer --status review <TaskID>
-```
+### Variables
 
-## Step 2.5: Await Judgment
-**Action:**
-*   If **Approved** (moved to `done`), the blueprint is locked. The Architect will spawn execution tasks based on your plan.
-*   If **Rejected** (moved back to `todo`), read the rejection log. Adjust the blueprint and repeat Step 2.3.
+*   `%%sprint_id%%`: **[Input]** The ID of the sprint this design work belongs to.
+*   `%%feature_name%%`: **[Input]** The name of the feature that requires a design.
+*   `%%ux_design_brief%%`: **[Input]** The detailed, structured markdown block containing all five sections from the Doctrine phase.
+

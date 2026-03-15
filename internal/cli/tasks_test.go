@@ -34,7 +34,8 @@ func TestListNotes_RoleFiltering(t *testing.T) {
 	}{
 		{"architect", 3},       // Sees all
 		{"doc-writer", 3},      // Sees all
-		{"junior-engineer", 1}, // Sees 'junior-engineer' tagged only
+		{"junior-engineer", 2}, // Sees untagged (public) + junior-engineer tagged
+		{"senior-engineer", 1}, // Sees only untagged (public); no senior-engineer tag
 	}
 
 	for _, tt := range tests {
@@ -115,19 +116,25 @@ func TestUpdateTaskStatus_RoleRestrictions(t *testing.T) {
 	id, _ := res.LastInsertId()
 
 	// 1. Engineer cannot mark done
-	err := UpdateTaskStatus(db, id, "done", "junior-engineer")
+	err := UpdateTaskStatus(db, id, "done", "", "junior-engineer", false, "")
 	if err == nil {
 		t.Error("Expected error when engineer marks done, got nil")
 	}
 
-	// 2. Engineer can mark review
-	err = UpdateTaskStatus(db, id, "review", "junior-engineer")
+	// 2. Engineer can mark doing (sequential step)
+	err = UpdateTaskStatus(db, id, "doing", "", "junior-engineer", false, "")
+	if err != nil {
+		t.Errorf("Engineer failed to mark doing: %v", err)
+	}
+
+	// 2b. Engineer can mark review (next step after doing)
+	err = UpdateTaskStatus(db, id, "review", "", "junior-engineer", false, "")
 	if err != nil {
 		t.Errorf("Engineer failed to mark review: %v", err)
 	}
 
 	// 3. QA approves
-	err = UpdateTaskStatus(db, id, "done", "qa-functional")
+	err = UpdateTaskStatus(db, id, "done", "", "qa-functional", false, "")
 	if err != nil {
 		t.Errorf("QA failed to approve: %v", err)
 	}
@@ -144,7 +151,7 @@ func TestUpdateTaskStatus_RoleRestrictions(t *testing.T) {
 	}
 
 	// 4. Sec approves
-	err = UpdateTaskStatus(db, id, "done", "security-ops")
+	err = UpdateTaskStatus(db, id, "done", "", "security-ops", false, "")
 	if err != nil {
 		t.Errorf("Sec failed to approve: %v", err)
 	}
@@ -167,7 +174,7 @@ func TestUpdateTaskStatus_RejectionResetsApprovals(t *testing.T) {
 	id, _ := res.LastInsertId()
 
 	// QA approves
-	UpdateTaskStatus(db, id, "done", "qa-functional")
+	UpdateTaskStatus(db, id, "done", "", "qa-functional", false, "")
 
 	var qaApp, secApp bool
 	db.QueryRow("SELECT qa_approved, security_approved FROM tasks WHERE id = ?", id).Scan(&qaApp, &secApp)
@@ -176,7 +183,7 @@ func TestUpdateTaskStatus_RejectionResetsApprovals(t *testing.T) {
 	}
 
 	// Security REJECTS
-	err := UpdateTaskStatus(db, id, "todo", "security-ops")
+	err := UpdateTaskStatus(db, id, "todo", "", "security-ops", false, "")
 	if err != nil {
 		t.Fatalf("Security rejection failed: %v", err)
 	}
@@ -209,7 +216,7 @@ func TestUpdateTaskStatus_SprintAutomation(t *testing.T) {
 	tid, _ := res.LastInsertId()
 
 	// 3. Move to 'doing' -> Sprint should auto-start
-	err := UpdateTaskStatus(db, tid, "doing", "senior-engineer")
+	err := UpdateTaskStatus(db, tid, "doing", "", "senior-engineer", false, "")
 	if err != nil {
 		t.Fatalf("UpdateTaskStatus failed: %v", err)
 	}
@@ -221,8 +228,8 @@ func TestUpdateTaskStatus_SprintAutomation(t *testing.T) {
 	}
 
 	// 4. Move to 'review' -> 'done' (bypass gates for simplicity with architect)
-	UpdateTaskStatus(db, tid, "review", "architect")
-	UpdateTaskStatus(db, tid, "done", "architect")
+	UpdateTaskStatus(db, tid, "review", "", "architect", true, "")
+	UpdateTaskStatus(db, tid, "done", "", "architect", true, "")
 
 	// 5. Verify sprint auto-complete
 	db.QueryRow("SELECT status FROM sprints WHERE id = ?", sid).Scan(&sprintStatus)

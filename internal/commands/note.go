@@ -6,7 +6,7 @@ import (
 	"fmt"
 )
 
-type NoteAddCommand struct{}
+type NoteAddCommand struct{ lastID int64 }
 
 func (c *NoteAddCommand) Name() string        { return "add" }
 func (c *NoteAddCommand) Description() string { return "Add a new note" }
@@ -35,15 +35,22 @@ func (c *NoteAddCommand) Execute(ctx *Context) error {
 	if err != nil {
 		return err
 	}
+	c.lastID = id
 	fmt.Printf("Note added: %d\n", id)
 	return nil
 }
+
+func (c *NoteAddCommand) AuditInfo() (string, int64, string) { return "note", c.lastID, "note.add" }
 
 type NoteListCommand struct{}
 
 func (c *NoteListCommand) Name() string        { return "list" }
 func (c *NoteListCommand) Description() string { return "List notes for a project or task" }
 func (c *NoteListCommand) Usage() string       { return "castra note list --project <pid> [--task <tid>]" }
+
+func (c *NoteListCommand) ReadInfo() (string, string) {
+	return "note", "note.list"
+}
 
 func (c *NoteListCommand) Execute(ctx *Context) error {
 	fs := flag.NewFlagSet("note list", flag.ExitOnError)

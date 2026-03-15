@@ -7,9 +7,22 @@ import (
 	"path/filepath"
 	"strings"
 
+	"castra/internal/config"
+	"castra/internal/generator"
 	"castra/internal/generator/common"
 	"castra/internal/generator/templates"
 )
+
+type GeminiGenerator struct{}
+
+func init() {
+	generator.Register("gemini", &GeminiGenerator{})
+}
+
+// InitWorkspace implements the generator.Generator interface.
+func (g *GeminiGenerator) InitWorkspace(baseDir string, _ config.VendorConfig) error {
+	return InitWorkspace(baseDir)
+}
 
 // InitWorkspace generates the Gemini Code Assist configuration files
 // from the shared templates package.

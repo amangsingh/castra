@@ -40,14 +40,15 @@ func TestMilestoneAddMissingName(t *testing.T) {
 	commands.AssertError(t, cmd.Execute(ctx))
 }
 
-// TestMilestoneAddNonArchitect verifies RBAC on milestone creation.
+// TestMilestoneAddNonArchitect verifies Persona Linter rejection on milestone creation.
 func TestMilestoneAddNonArchitect(t *testing.T) {
 	db := commands.NewTestDB(t)
-	cmd := &commands.MilestoneAddCommand{}
-	ctx := commands.NewTestCtx(db, "junior-engineer", []string{"--project", "1", "--name", "Rogue"})
-	err := cmd.Execute(ctx)
-	if err == nil || !strings.Contains(err.Error(), "architect") {
-		t.Errorf("expected architect-only error, got: %v", err)
+	reg := commands.NewRegistry()
+	reg.Register(&commands.MilestoneAddCommand{})
+	ctx := commands.NewTestCtx(db, "junior-engineer", []string{"add", "--project", "1", "--name", "Rogue"})
+	err := reg.Execute(ctx)
+	if err == nil || !strings.Contains(err.Error(), "Outside my jurisdiction") {
+		t.Errorf("expected persona rejection error, got: %v", err)
 	}
 }
 
@@ -127,13 +128,14 @@ func TestMilestoneDeleteMissingID(t *testing.T) {
 	commands.AssertError(t, cmd.Execute(ctx))
 }
 
-// TestMilestoneDeleteNonArchitect verifies RBAC on delete.
+// TestMilestoneDeleteNonArchitect verifies Persona Linter rejection on delete.
 func TestMilestoneDeleteNonArchitect(t *testing.T) {
 	db := commands.NewTestDB(t)
-	cmd := &commands.MilestoneDeleteCommand{}
-	ctx := commands.NewTestCtx(db, "security-ops", []string{"1"})
-	err := cmd.Execute(ctx)
-	if err == nil || !strings.Contains(err.Error(), "architect") {
-		t.Errorf("expected architect-only error, got: %v", err)
+	reg := commands.NewRegistry()
+	reg.Register(&commands.MilestoneDeleteCommand{})
+	ctx := commands.NewTestCtx(db, "security-ops", []string{"delete", "1"})
+	err := reg.Execute(ctx)
+	if err == nil || !strings.Contains(err.Error(), "Outside my jurisdiction") {
+		t.Errorf("expected persona rejection error, got: %v", err)
 	}
 }

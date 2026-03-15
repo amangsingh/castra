@@ -1,36 +1,37 @@
 ---
-description: Phase 3 - Tactical Planning (Work Order Generation)
+description: Executes Phase 3 (The Work Order), decomposing a Feature-Milestone into a granular, actionable backlog of engineering tasks.
 ---
 
-# Phase 3: Tactical Planning (Work Order Generation)
+### Doctrine: The Art of the Work Order
 
-**Trigger:** A decision is made to begin active development on a specific Milestone from Phase 2.
-**Goal:** To break down a high-level roadmap task into a series of small, concrete, and immediately actionable tasks for the engineering team, and schedule them into a time-box.
+Your purpose here is the final act of translation. You transform a single Feature from the roadmap into a series of small, concrete, and immediately actionable tasks for the engineering team. This is the bridge from planning to execution.
 
-## Step 3.1: Create a Time-Boxed "Active Sprint"
-**Action:** Create a new, short-term sprint for the upcoming development cycle (e.g., an "Iteration Batch" or "Session"). Sprints manage the *when*.
-**Dates are Optional:** For AI agents, a sprint might take 10 minutes, so `start` and `end` dates/labels are purely optional strings for context (e.g., `--start "Session 1"` or omitted entirely).
-**Command:**
-```bash
-castra sprint add --role architect --project <ProjectID> --name "Iteration 1: Backend Scaffolding"
-```
-**Capture:** Record the Active Sprint ID.
+1.  **Isolate the Feature:** Your focus must be on a single Feature-Milestone. Do not try to plan multiple features in one sprint.
+2.  **Think Like the Builder:** Deconstruct the feature into the exact sequence of steps an engineer would take. What must be built first? What are the dependencies?
+3.  **Embrace Atomicity:** Each task you create must be "atomic." It should be small enough to be completed by a single engineer in 1-2 days and have a clear, verifiable "definition of done."
+4.  **The Law of the Contract:** You are **forbidden** from creating a task with a vague description. Every task you generate is a binding contract for the engineer. Its description (`--desc` flag) **MUST** contain the following structured markdown sections:
+    *   **Objective:** A clear, one-sentence statement of what will be built or fixed.
+    *   **Acceptance Criteria:** An enumerated list of testable, pass/fail conditions that define "DONE." (e.g., "1. The endpoint returns a 200 OK. 2. The response body contains a 'user_id'.")
+    *   **Technical Notes:** (Optional) Any specific guidance, libraries to use, or architectural patterns the engineer should follow.
+    *   **Verification Steps:** Explicit, step-by-step instructions for the `@qa-functional` agent to verify the acceptance criteria have been met.
+5.  **The Law of the Path:** You are **forbidden** from creating a task without assigning it to a pre-defined Archetype. A task without a path is a rogue element and a violation of system integrity. The `--archetype` flag is mandatory.
 
-## Step 3.2: Decompose Roadmap Tasks into Granular Work Orders
-**Action:** Select a high-level roadmap task from a Milestone (e.g., "API & Database Design"). Analyze it and break it down into small, well-defined engineering tasks that can be completed by one person.
-**Task Granularity:** A good task should represent 1-2 days of work and have a clear, verifiable outcome.
-**Linking:** Assign these granular tasks to *both* the active Sprint (the time-box) and the parent Milestone (the feature tracker).
-**Examples:** "Create 'users' table migration," "Implement /auth/register endpoint," "Implement JWT generation service," "Add password hashing logic."
-**Command (repeat for each granular task):**
-```bash
-castra task add --role architect --project <ProjectID> --milestone <MilestoneID> --sprint <ActiveSprintID> --title "Create 'users' table migration" --desc "The migration must include fields for id, email, password_hash, created_at, and updated_at."
-```
+### Sequence: Work Order Protocol
 
-## Step 3.3: Task Cleanup
-**Action:** Once the high-level roadmap task has been fully decomposed into granular sprint tasks, delete the original high-level placeholder task to keep the backlog clean.
-**Command:**
-```bash
-castra task delete --role architect <TaskID>
-```
+1.  **Create a Time-Boxed Sprint Container**
+    *   `castra sprint add --role architect --project "%%project_id%%" --name "%%sprint_name%%" --start-date "%%start_date%%" --end-date "%%end_date%%"`
+2.  **Decompose the Feature into Contractual Tasks**
+    *   Repeat `castra task add` for each atomic task, ensuring each is assigned to an Archetype.
 
-**Output:** A time-boxed "Active Sprint" is now filled with multiple granular tasks, all correctly tethered to their parent Milestone. The engineering team now has a ready and waiting backlog of work. The system is primed for execution.
+    *Example:*
+    *   `castra task add --role architect --sprint "%%sprint_id%%" --title "Task 1" --desc "%%contract%%" --archetype "%%archetype_id%%"`
+    *   `castra task add --role architect --sprint "%%sprint_id%%" --title "Task 2" --desc "%%contract%%" --archetype "%%archetype_id%%"`
+
+### Variables
+
+*   `%%project_id%%`: **[Input]** The ID of the parent project.
+*   `%%sprint_name%%`: **[Input]** The specific name for this sprint cycle.
+*   `%%start_date%%`, `%%end_date%%`: **[Input]** The start and end dates for the sprint.
+*   `%%task_1_title%%`, `%%task_1_contract%%`, etc.: **[Input]** The titles and detailed, structured contract descriptions for each atomic task.
+*   `%%sprint_id%%`: **[Output]** The ID returned from the `sprint add` command, to be used in subsequent steps.
+*   `%%archetype_id%%`: **[Input]** The ID of the Archetype that defines the lifecycle for this specific task.

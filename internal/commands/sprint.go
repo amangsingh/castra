@@ -6,7 +6,7 @@ import (
 	"fmt"
 )
 
-type SprintAddCommand struct{}
+type SprintAddCommand struct{ lastID int64 }
 
 func (c *SprintAddCommand) Name() string        { return "add" }
 func (c *SprintAddCommand) Description() string { return "Add a new sprint" }
@@ -33,8 +33,13 @@ func (c *SprintAddCommand) Execute(ctx *Context) error {
 	if err != nil {
 		return err
 	}
+	c.lastID = id
 	fmt.Printf("Sprint added: %d\n", id)
 	return nil
+}
+
+func (c *SprintAddCommand) AuditInfo() (string, int64, string) {
+	return "sprint", c.lastID, "sprint.add"
 }
 
 type SprintListCommand struct{}
@@ -42,6 +47,10 @@ type SprintListCommand struct{}
 func (c *SprintListCommand) Name() string        { return "list" }
 func (c *SprintListCommand) Description() string { return "List sprints for a project" }
 func (c *SprintListCommand) Usage() string       { return "castra sprint list --project <pid>" }
+
+func (c *SprintListCommand) ReadInfo() (string, string) {
+	return "sprint", "sprint.list"
+}
 
 func (c *SprintListCommand) Execute(ctx *Context) error {
 	fs := flag.NewFlagSet("sprint list", flag.ExitOnError)

@@ -13,12 +13,15 @@ func NewDefaultRegistry() *Registry {
 	projectCmd := NewSubCommand("project", "Manage projects")
 	projectCmd.Register(&ProjectAddCommand{})
 	projectCmd.Register(&ProjectListCommand{})
+	projectCmd.Register(&ProjectViewCommand{})
+	projectCmd.Register(&ProjectUpdateCommand{})
 	projectCmd.Register(&ProjectDeleteCommand{})
 	r.Register(projectCmd)
 
 	milestoneCmd := NewSubCommand("milestone", "Manage milestones")
 	milestoneCmd.Register(&MilestoneAddCommand{})
 	milestoneCmd.Register(&MilestoneListCommand{})
+	milestoneCmd.Register(&MilestoneViewCommand{})
 	milestoneCmd.Register(&MilestoneUpdateCommand{})
 	milestoneCmd.Register(&MilestoneDeleteCommand{})
 	r.Register(milestoneCmd)
@@ -40,6 +43,12 @@ func NewDefaultRegistry() *Registry {
 	noteCmd.Register(&NoteAddCommand{})
 	noteCmd.Register(&NoteListCommand{})
 	r.Register(noteCmd)
+
+	archetypeCmd := NewSubCommand("archetype", "Manage task archetypes")
+	archetypeCmd.Register(&ArchetypeAddCommand{})
+	archetypeCmd.Register(&ArchetypeListCommand{})
+	archetypeCmd.Register(&ArchetypeDeleteCommand{})
+	r.Register(archetypeCmd)
 
 	r.Register(&TUICommand{})
 	r.Register(&WatchCommand{})

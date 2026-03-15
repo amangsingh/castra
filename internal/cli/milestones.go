@@ -6,23 +6,39 @@ import (
 )
 
 type Milestone struct {
-	ID        int64
-	ProjectID int64
-	Name      string
-	Status    string
+	ID          int64
+	ProjectID   int64
+	ParentID    *int64 // self-referencing FK for nesting
+	ArchetypeID *int64 // Pointer to handle NULL
+	Name        string
+	Description string
+	Status      string
 }
 
-func AddMilestone(db *sql.DB, projectID int64, name string) (int64, error) {
-	query := `INSERT INTO milestones (project_id, name, status) VALUES (?, ?, 'open')`
-	res, err := db.Exec(query, projectID, name)
+func AddMilestone(db *sql.DB, projectID int64, parentID *int64, archetypeID *int64, name string, description string) (int64, error) {
+	query := `INSERT INTO milestones (project_id, parent_id, archetype_id, name, description, status) VALUES (?, ?, ?, ?, ?, 'open')`
+	res, err := db.Exec(query, projectID, parentID, archetypeID, name, description)
 	if err != nil {
 		return 0, err
 	}
 	return res.LastInsertId()
 }
 
+func GetMilestone(db *sql.DB, id int64) (*Milestone, error) {
+	var m Milestone
+	query := `SELECT id, project_id, parent_id, archetype_id, name, COALESCE(description, ''), status FROM milestones WHERE id = ? AND deleted_at IS NULL`
+	err := db.QueryRow(query, id).Scan(&m.ID, &m.ProjectID, &m.ParentID, &m.ArchetypeID, &m.Name, &m.Description, &m.Status)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return nil, fmt.Errorf("milestone not found")
+		}
+		return nil, err
+	}
+	return &m, nil
+}
+
 func ListMilestones(db *sql.DB, projectID int64, role string) ([]Milestone, error) {
-	query := `SELECT id, project_id, name, status FROM milestones WHERE project_id = ? AND deleted_at IS NULL`
+	query := `SELECT id, project_id, parent_id, archetype_id, name, COALESCE(description, ''), status FROM milestones WHERE project_id = ? AND deleted_at IS NULL`
 	rows, err := db.Query(query, projectID)
 	if err != nil {
 		return nil, err
@@ -32,7 +48,7 @@ func ListMilestones(db *sql.DB, projectID int64, role string) ([]Milestone, erro
 	var milestones []Milestone
 	for rows.Next() {
 		var m Milestone
-		if err := rows.Scan(&m.ID, &m.ProjectID, &m.Name, &m.Status); err != nil {
+		if err := rows.Scan(&m.ID, &m.ProjectID, &m.ParentID, &m.ArchetypeID, &m.Name, &m.Description, &m.Status); err != nil {
 			return nil, err
 		}
 		milestones = append(milestones, m)
@@ -41,8 +57,8 @@ func ListMilestones(db *sql.DB, projectID int64, role string) ([]Milestone, erro
 }
 
 func UpdateMilestoneStatus(db *sql.DB, id int64, newStatus string, role string) error {
-	if role != "architect" {
-		return fmt.Errorf("only architect can update milestone status")
+	if role != "architect" && role != "senior-engineer" {
+		return fmt.Errorf("only architect or senior-engineer can update milestone status")
 	}
 
 	if newStatus != "open" && newStatus != "completed" {
