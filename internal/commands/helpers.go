@@ -55,7 +55,12 @@ func GetDB() *sql.DB {
 						}
 					}
 				} else {
-					log.Printf("Warning: legacy ledger found at %s, but central ledger already exists at %s. Manual merge required.", absLegacy, absTarget)
+					// Central ledger already exists — it is the source of truth.
+					// Silently remove the stale legacy CWD copy (and any WAL/journal files)
+					// so that no user intervention is required.
+					for _, suffix := range []string{"", "-journal", "-wal", "-shm"} {
+						os.Remove(legacyPath + suffix)
+					}
 				}
 			}
 		}
